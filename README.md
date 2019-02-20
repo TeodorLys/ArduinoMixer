@@ -3,7 +3,6 @@ This program is a driver for an "external machine", a board with slider potentio
 ArduinoMixer gets all of the active audio sessions in windows, formats them and sends it to the arduino board.
 
 # Features
-
 ### Reservation:
 You can reserv specific spots on the board.
 If you do that spot will always be allocated for the specific program.
@@ -17,3 +16,5 @@ For example: if you exclude the "system" audio session, it will not show up on t
 ### Rename:
 Since ArduinoMixer gets the process name of all sessions it might be a weird name.
 For example: windows music "Groove"s process name is "MUSIC.UI", then you can rename it to "GROOVE". 
+
+![img_20190220_165407__01](https://user-images.githubusercontent.com/17643866/53105077-c3220600-3530-11e9-8349-2fe2258260be.jpg)
