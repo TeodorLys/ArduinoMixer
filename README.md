@@ -6,8 +6,8 @@ ArduinoMixer gets all of the active audio sessions in windows, formats them and 
 ### Reservation:
 You can reserv specific spots on the board.
 If you do that spot will always be allocated for the specific program.
-For example: if I reserv spot 1 for Chrome, that spot will always be chrome, if it is open, 
-otherwise it will say "RESERV"
+For example: if I reserv spot 1 for Chrome, that spot cannot be anything else than Chrome. 
+If Chrome is not open it will be called "RESERV"
 
 ### Exclusion:
 You can exclude programs.
