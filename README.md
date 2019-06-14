@@ -17,4 +17,8 @@ For example: if you exclude the "system" audio session, it will not show up on t
 Since ArduinoMixer gets the process name of all sessions it might be a weird name.
 For example: windows music "Groove"s process name is "MUSIC.UI", then you can rename it to "GROOVE". 
 
+#VERSION 2
 ![img_20190220_165407__01](https://user-images.githubusercontent.com/17643866/53105077-c3220600-3530-11e9-8349-2fe2258260be.jpg)
+
+#VERSION 3
+![ArduinoMixer_Version_3_Mark_2](https://user-images.githubusercontent.com/17643866/59508867-ab8bd600-8eaf-11e9-8e17-ca0de0841388.PNG)
