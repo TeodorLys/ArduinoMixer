@@ -12,7 +12,7 @@
 Load_Externals::Load_Externals(Network_Functionality *n) : nf(n){
 	logging = new SABool("Enable_Logging", &is_Logging);
 	waiting = new SABool("Waiting_Update", &global::waiting_Update);
-	com = new SAString("Com_Value", &value);
+	com = new SAString("Com_Value", &global::com_Port);
 	netUpdate = new SAString("Last_Modified", &global::update_Time);
 	exclude = new SAVariable_Array("Exclude_In_Volume_Control", &global::to_Exclude);
 	prefered = new SAVariable_Array("Prefered_List", &global::pref);
@@ -30,7 +30,7 @@ void Load_Externals::Construct_Reserved_List() {
 
 void Load_Externals::Construct_Rename_List() {
 	rename_session buff;
-	for (int a = 0; a < global::rename_list.size(); a++) {
+	for (int a = 0; a < (int)global::rename_list.size(); a++) {
 		if (global::rename_list[a].find("->") != std::string::npos) {
 			buff.default_name = global::rename_list[a];
 			buff.default_name.erase(buff.default_name.find("->"), buff.default_name.length());
@@ -44,12 +44,17 @@ void Load_Externals::Construct_Rename_List() {
 void Load_Externals::Parse_Document_Path() {
 	//Undoubtedly a better way to do this... but it is late at night, and other attempts was futile...
 	documents_Path = std::experimental::filesystem::temp_directory_path().string();
-	documents_Path.erase(documents_Path.size() - 1, documents_Path.size());
-	documents_Path.erase(documents_Path.find_last_of("\\"), documents_Path.size());
-	documents_Path.erase(documents_Path.find_last_of("\\"), documents_Path.size());
-	documents_Path.erase(documents_Path.find_last_of("\\"), documents_Path.size());
-	documents_Path += "\\Documents";
-
+	try {
+		documents_Path.erase(documents_Path.size() - 1, documents_Path.size());
+		documents_Path.erase(documents_Path.find_last_of("\\"), documents_Path.size());
+		documents_Path.erase(documents_Path.find_last_of("\\"), documents_Path.size());
+		documents_Path.erase(documents_Path.find_last_of("\\"), documents_Path.size());
+		documents_Path += "\\Documents";
+	}
+	catch (std::exception e) {
+		printf("%s\n", e.what());
+		MessageBox(NULL, "For some reason I could not parse the documents path... Does it exist?", "FATAL ERROR HAS OCCURED", MB_OK);
+	}
 	if (!std::experimental::filesystem::exists(documents_Path + "\\ArduinoMixerData")) {
 		try {
 			std::experimental::filesystem::create_directory(documents_Path + "\\ArduinoMixerData");
@@ -83,6 +88,8 @@ void Load_Externals::Settings_Load() {
 	settings->Load(*exclude);
 	settings->Load(*prefered);
 	settings->Load(*rename);
+
+
 }
 
 void Load_Externals::Settings_Save_Variables(std::fstream *f) {
@@ -99,8 +106,13 @@ void Load_Externals::Load_File() {
 	std::fstream file(settings_Path, std::fstream::in);
 	Settings_Load();
 	settings->Load_Settings();
-	global::com_Port = value;
 	global::enable_logging = is_Logging;
+
+	if (global::pref.size() == 0) {
+		for (int a = 0; a < 36; a++) {
+			global::pref.push_back("UNUSED");
+		}
+	}
 }
 
 void Load_Externals::Create_File() {
@@ -110,7 +122,6 @@ void Load_Externals::Create_File() {
 	std::fstream file(settings_Path, std::fstream::out);
 	_Get_COM_From_Reg();
 	file.close();
-	global::com_Port = value;
 	global::enable_logging = is_Logging;
 	for (int a = 0; a < 36; a++) {
 		global::pref.push_back("UNUSED");
@@ -125,7 +136,6 @@ void Load_Externals::Complete_Update_Preload_File() {
 	//std::fstream file(settings_Path, std::fstream::in);
 	Settings_Load();
 	settings->Load_Settings();
-	global::com_Port = value;
 	global::enable_logging = is_Logging;
 	//file.close();
 }
@@ -170,6 +180,8 @@ void Load_Externals::_Get_COM_From_Reg() {
 	}*/
 
 	self::Arduino_API api;
-	value = api.Get_Specific_Arduino_Port(1000000, "AM", "~");
+	printf("checking_coms...");
+	global::com_Port = api.Get_Specific_Arduino_Port(1000000, "AM", "~");
+	printf("DONE!\n");
 	api.disconnect();
 }

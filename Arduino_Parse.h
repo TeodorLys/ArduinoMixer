@@ -1,11 +1,8 @@
 #pragma once
 #include <ArduinoConnect.hpp>
 #include <chrono>
+#include "Global_Variables.h"
 
-struct AudioSession {
-	float value = 1.f;
-	int last_value = 0;
-};
 
 class Arduino_Parse {
 private:
@@ -29,8 +26,9 @@ public:
 	void Update_LCD_Screen();
 	bool Recieved_NULL_for_a_Time(int t);
 	void Arduino_Display_Toggle();
-	void Arduino_Display_Off();
-	void Arduino_Display_ON();
+	void Toggle_Volume_Procentage();
+	void Dehook_from_mixer();
+	void check_for_disconnection();
 	bool is_Display_Off() { return display_Off; }
 	bool _Is_Connected() { return is_Connected; }
 };

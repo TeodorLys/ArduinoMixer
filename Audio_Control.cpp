@@ -12,6 +12,7 @@
                 { (punk)->Release(); (punk) = NULL; }
 
 std::string Audio_Control::Get_Session_Display_Name(IAudioSessionControl **pSessionControl) {
+	HRESULT hr = S_OK;
 	LPWSTR try_Str = 0;
 	std::string display;  //What to display.
 	(*pSessionControl)->GetDisplayName(&try_Str);
@@ -24,7 +25,7 @@ std::string Audio_Control::Get_Session_Display_Name(IAudioSessionControl **pSess
 		DWORD t2 = 0;
 		char buffer[MAX_PATH];
 
-		PID->GetProcessId(&t2);
+		hr = PID->GetProcessId(&t2);
 
 		HANDLE hprocess = NULL;
 
@@ -34,10 +35,28 @@ std::string Audio_Control::Get_Session_Display_Name(IAudioSessionControl **pSess
 		if (hprocess != NULL) {
 			QueryFullProcessImageName(hprocess, 0, buffer, &max);  //Will get the actual process path(including the NAME).
 			display = buffer;
-			display.erase(0, display.find_last_of("\\") + 1);  //Removes the path, excluding the progam name.
-			display.erase(display.size() - 4, display.size());  // --||--
+			try {
+				display.erase(0, display.find_last_of("\\") + 1);  //Removes the path, excluding the progam name.
+				display.erase(display.size() - 4, display.size());  // --||--
+			}
+			catch (std::exception e) {
+				printf("%s\n", e.what());
+				display = "UNPARSE";
+			}
 		}
+		else {
+			return "NULL";
+		}
+
 		std::transform(display.begin(), display.end(), display.begin(), ::toupper);
+		printf("s%s?\n", display.c_str());
+		std::string buff = ""; 
+		for (char c : display) {
+			if (c != (char)32)
+				buff += c;
+		}
+
+		display = buff;
 
 		if (display.size() > 6)
 			display.erase(6, display.size());
@@ -73,9 +92,10 @@ bool Audio_Control::Check_for_Restrictions(std::string s) {
 
 int Audio_Control::Check_for_Reservations(std::string s) {
 	for (reserved r : global::reserved_List) {
-		if (r.name.find(s) != std::string::npos) {
+		if (r.name.find(s) != std::string::npos)
 			return r.index;
-		}
+		else if(s.find(r.name) != std::string::npos)
+			return r.index;
 	}
 	return -1;
 }
@@ -88,8 +108,10 @@ std::string Audio_Control::Check_For_New_Name(std::string s) {
 	return s;
 }
 
-Audio_Control::Audio_Control(float* v1, float* v2, float* v3, float* v4) {
+Audio_Control::Audio_Control(AudioSession* v1, AudioSession* v2, AudioSession* v3, AudioSession* v4) {
 	tstart = std::chrono::high_resolution_clock::now();  //For the checking when a new audio session is added.
+
+	HRESULT hr = S_OK;
 
 	//Save the potentiometers value pointers.
 	save_Vars[0] = v1;
@@ -97,10 +119,29 @@ Audio_Control::Audio_Control(float* v1, float* v2, float* v3, float* v4) {
 	save_Vars[2] = v3;
 	save_Vars[3] = v4;
 
-	CreateSessionManager(&pSession);
-	pSession->GetSessionEnumerator(&pSessionEnum);
+	hr = CreateSessionManager(&pSession);
 
-	pSessionEnum->GetCount(&old_Count);
+	if (hr != S_OK) {
+		std::string text = "ERROR CODE: " + std::to_string(hr);
+		MessageBox(NULL, text.c_str(), "FATAL ERROR HAS OCCURED", MB_OK);
+		exit(-1);
+	}
+
+	hr = pSession->GetSessionEnumerator(&pSessionEnum);
+
+	if (hr != S_OK) {
+		std::string text = "ERROR CODE: " + std::to_string(hr);
+		MessageBox(NULL, text.c_str(), "FATAL ERROR HAS OCCURED", MB_OK);
+		exit(-1);
+	}
+
+	hr = pSessionEnum->GetCount(&old_Count);
+	if (hr != S_OK) {
+		std::string text = "ERROR CODE: " + std::to_string(hr);
+		MessageBox(NULL, text.c_str(), "FATAL ERROR HAS OCCURED", MB_OK);
+		exit(-1);
+	}
+
 	int temp_Index = 1;  // pre-defined page number in the vector
 	int offset = 0;
 	Audio_Volume_Variables buff;
@@ -110,6 +151,15 @@ Audio_Control::Audio_Control(float* v1, float* v2, float* v3, float* v4) {
 		pSessionEnum->GetSession(a, &pSessionControl);
 		pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&buff.control);
 		buff.display_Name = Get_Session_Display_Name(&pSessionControl);
+
+		if (buff.display_Name == "NULL") {
+			buff.display_Name = Get_Session_Display_Name(&pSessionControl);
+			if (buff.display_Name == "NULL") {
+				std::string text = "ERROR CODE" + std::to_string(hr);
+				//MessageBox(NULL, text.c_str(), "FATAL ERROR HAS OCCURED", MB_OK);
+				buff.display_Name = "UNKNOWN";
+			}
+		}
 
 		if (Check_for_Restrictions(buff.display_Name)) {
 			temp.push_back(buff);
@@ -126,11 +176,12 @@ Audio_Control::Audio_Control(float* v1, float* v2, float* v3, float* v4) {
 	*/
 
 	for (reserved r : global::reserved_List) {
+		printf("r%s?\n", r.name.c_str());
 		if (Check_for_Restrictions(r.name)) {
 			format_temp[r.index].display_Name = "RESERV";  // Pre-set the reserved spots, 
 																										 //if any of the controls are active it will be overwritten.
 			for (int a = 0; a < (int)temp.size(); a++) {
-				if (temp[a].display_Name == r.name) {
+				if (temp[a].display_Name.find(r.name) != std::string::npos) {
 					format_temp[r.index] = temp[a];
 					temp.erase(temp.begin() + a);
 				}
@@ -158,7 +209,7 @@ Audio_Control::Audio_Control(float* v1, float* v2, float* v3, float* v4) {
 		Sets the pot pointer after the reservation checking, 
 		because this can be overwritten by -> 
 		*/
-		format_temp[a].v = save_Vars[a % 4];
+		format_temp[a].v = &save_Vars[a % 4]->value;
 	}
 
 	for (int a = 0; a < 36; a++) {
@@ -188,7 +239,7 @@ void Audio_Control::Rerender_Audio_Displays() {
 			*/
 			if (sliders[r.index].display_Name != "UNUSED" && sliders[r.index].display_Name != "RESERV" && sliders[r.index].display_Name != r.name) {
 				bool moved = false;
-				for (int a = r.index; a < sliders.size(); a++) {
+				for (int a = r.index; a < (int)sliders.size(); a++) {
 					if (sliders[a].display_Name == "UNUSED" && !moved) {
 						sliders[a].display_Name = sliders[r.index].display_Name;
 						global::programs[a] = Check_For_New_Name(sliders[r.index].display_Name);
@@ -217,7 +268,7 @@ void Audio_Control::Rerender_Audio_Displays() {
 			else if (sliders[r.index].display_Name == "UNUSED") {
 				sliders[r.index].display_Name = "RESERV";
 				global::programs[r.index] = "RESERV";
-				for (int a = 0; a < sliders.size(); a++) {
+				for (int a = 0; a < (int)sliders.size(); a++) {
 					if (sliders[a].display_Name == r.name) {
 						sliders[r.index].display_Name = sliders[a].display_Name;
 						global::programs[r.index] = sliders[a].display_Name;
@@ -243,7 +294,7 @@ void Audio_Control::Rerender_Audio_Displays() {
 	Checks if there is any new exclutions added.
 	If so it will release them and, change it to UNUSED
 	*/
-	for (int a = 0; a < sliders.size(); a++) {
+	for (int a = 0; a < (int)sliders.size(); a++) {
 		if (!Check_for_Restrictions(sliders[a].display_Name)) {
 			printf("Newly restricted\n");
 			sliders[a].display_Name = "UNUSED";
@@ -267,7 +318,7 @@ void Audio_Control::Rerender_Audio_Displays() {
 			}
 		}
 	}
-	for (int a = 0; a < sliders.size(); a++) {
+	for (int a = 0; a < (int)sliders.size(); a++) {
 		global::programs[a] = Check_For_New_Name(sliders[a].display_Name);
 	}
 	Push_Back_Audio_Control();
@@ -297,7 +348,7 @@ void Audio_Control::Pop_Back_Audio_Control() {
 		pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&buff.control);
 		buff.display_Name = Get_Session_Display_Name(&pSessionControl);
 
-		buff.v = save_Vars[a % 4];
+		buff.v = &save_Vars[a % 4]->value;
 		if (Check_for_Restrictions(buff.display_Name))
 			temp.push_back(buff);
 		SAFE_RELEASE(buff.control);
@@ -480,7 +531,7 @@ void Audio_Control::Free_All() {
 
 bool Audio_Control::Set_Volume() {
 	for (int c = 0; c < (int)sliders.size(); c++) {
-		if (sliders[c].index == global::page_Number && sliders[c].control != NULL) {
+		if (sliders[c].index == global::page_Number && sliders[c].control != NULL && save_Vars[0]->has_changed) {
 			if (sliders[c].v == nullptr) {
 				/*Should probably not use exceptions but... wanted to try something else:)*/
 				throw ("SLIDER VARIABLE POINTER WAS NULL %i", c);

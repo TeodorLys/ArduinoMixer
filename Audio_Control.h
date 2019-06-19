@@ -26,7 +26,7 @@ private:
 	IAudioSessionEnumerator *pSessionEnum = 0;
 	IAudioSessionControl *pSessionControl = 0;
 	std::vector<Audio_Volume_Variables> sliders;
-	float *save_Vars[4];
+	AudioSession *save_Vars[4];
 	int old_Count = 0;
 protected:
 	std::string Get_Session_Display_Name(IAudioSessionControl **pSessionControl);
@@ -36,7 +36,7 @@ protected:
 	int Check_for_Reservations(std::string s);
 	std::string Check_For_New_Name(std::string s);
 public:
-	Audio_Control(float* v1, float* v2, float* v3, float* v4);
+	Audio_Control(AudioSession* v1, AudioSession* v2, AudioSession* v3, AudioSession* v4);
 	~Audio_Control();
 	HRESULT CreateSessionManager(IAudioSessionManager2** ppSessionManager);
 	bool Set_Volume();

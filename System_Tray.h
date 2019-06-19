@@ -1,12 +1,15 @@
 #pragma once
+#include "Settings_OGUI.h"
 #include "Settings_GUI.h"
 #include <Windows.h>
+
 
 #define AM_EXIT WM_APP + 1
 #define AM_UPDATES WM_APP + 2
 #define AM_WAITING WM_APP + 3
 #define AM_SETTINGS WM_APP + 4
 #define AM_TOGGLE WM_APP + 5
+#define AM_TOGGLE_VOLUME WM_APP + 6
 
 class Load_Externals;
 class Network_Functionality;
@@ -21,9 +24,12 @@ private:
 	static Network_Functionality *nf;
 	static Load_Externals *load;
 	static NOTIFYICONDATA notify;
-	static std::unique_ptr<Settings_GUI> *gui;
+	static Settings_GUI	 *gui;
+	static Settings_OGUI *new_gui;
+	static bool new_g;
 public:
-	System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext, std::unique_ptr<Settings_GUI> *g);
+	System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext, Settings_GUI *g);
+	System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext, Settings_OGUI *g);
 	void Start();
 	void Set_Version(std::string ver) { tip = "ARDUINO MIXER PROTOTYPE v." + ver; 	}
 	~System_Tray();

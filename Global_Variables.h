@@ -3,7 +3,8 @@
 /*I know global variables are bad...
 but in my defence, I am too lazy to 
 come up with some smart solution to share variables*/
-
+#include "Chrome_Integration.h"
+#include <SFML/Graphics/Font.hpp>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,12 @@ struct rename_session {
 	rename_session() {}
 };
 
+struct AudioSession {
+	float value = 1.f;
+	int last_value = 0;
+	bool has_changed = true;
+};
+
 namespace global {
 	extern std::string com_Port;
 	extern std::string update_Time;
@@ -37,4 +44,6 @@ namespace global {
 	extern std::vector<reserved> reserved_List;
 	extern std::vector<std::string> rename_list;
 	extern std::vector<rename_session> renamed;
+	extern Chrome_Integration ci;    // DONT DO THIS!!! TEMPORARY!
+	extern sf::Font font;
 }

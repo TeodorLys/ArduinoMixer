@@ -14,7 +14,6 @@ private:
 		SAVariable_Array *prefered;
 		SAVariable_Array *rename;
 		SaveSettings *settings;
-		std::string value = "";
 		std::string documents_Path = "";   //Path to the current user documents folder
 		std::string settings_Path = ""; 
 		bool is_Logging = false;  // Default file values...
@@ -40,5 +39,15 @@ public:
 public:
 	bool get_Logging() const { return is_Logging; }
 	bool get_Exclude_System() const { return system_Control; }
+	~Load_Externals() {
+		delete logging;
+		delete waiting;
+		delete com;
+		delete netUpdate;
+		delete exclude;
+		delete prefered;
+		delete rename;
+		delete settings;
+	}
 };
 
