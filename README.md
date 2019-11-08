@@ -11,7 +11,8 @@ If Chrome is not open it will be called "RESERV"
 
 ### Exclusion:
 You can exclude programs.
-For example: if you exclude the "system" audio session, it will not show up on the screen 
+For example: if you exclude the "system" audio session, it will not show up on the screen.
+This always take priority!
 
 ### Rename:
 Since ArduinoMixer gets the process name of all sessions it might be a weird name.
