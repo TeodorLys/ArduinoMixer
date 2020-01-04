@@ -3,8 +3,8 @@
 /*I know global variables are bad...
 but in my defence, I am too lazy to 
 come up with some smart solution to share variables*/
-#include "Chrome_Integration.h"
 #include <SFML/Graphics/Font.hpp>
+#include "Chrome_Integration.h"
 #include <string>
 #include <vector>
 
@@ -12,8 +12,8 @@ come up with some smart solution to share variables*/
 struct reserved {
 	int index = -1;
 	std::string name;
-
-	reserved(int i, std::string s) : index(i), name(s) {}
+	int _option_index = 0;
+	reserved(int i, std::string s, int option_index = 0) : index(i), name(s), _option_index(option_index) {}
 };
 
 struct rename_session {
@@ -30,20 +30,38 @@ struct AudioSession {
 	bool has_changed = true;
 };
 
+struct page_spec {
+	int _page = -1;
+	int _option_index = -1;
+	std::string _name[4];
+	page_spec(int page, int option_index, std::string name1 = "UNUSED", std::string name2 = "UNUSED", std::string name3 = "UNUSED", std::string name4 = "UNUSED") : _page(page), _option_index(option_index) {
+		_name[0] = name1;
+		_name[1] = name2;
+		_name[2] = name3;
+		_name[3] = name4;
+	}
+};
+
 namespace global {
-	extern std::string com_Port;
-	extern std::string update_Time;
+	//extern std::string com_Port;
+	//extern std::string update_Time;
 	extern std::string documents_Settings_Path;
+	extern std::string ci_key;
+	extern int version;
+	extern int ci_key_hex;
+	extern int ci_add_hex;
 	extern volatile int page_Number;
 	extern std::vector<std::string> programs;
 	extern std::vector<std::string> pref;
 	extern bool waiting_Update;
 	extern bool enable_logging;
+	extern bool auto_update;
+	extern bool prog_ending;
 	extern std::vector<std::string> to_Exclude;
-	//extern std::vector<std::string> prefered_list;
 	extern std::vector<reserved> reserved_List;
 	extern std::vector<std::string> rename_list;
 	extern std::vector<rename_session> renamed;
-	extern Chrome_Integration ci;    // DONT DO THIS!!! TEMPORARY!
+	extern std::vector<page_spec> _page_options;
+	extern std::vector<std::string> page_options;
 	extern sf::Font font;
 }

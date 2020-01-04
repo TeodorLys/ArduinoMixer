@@ -4,11 +4,12 @@
 #include "resource.h"
 #include "Network_Functionality.h"
 #include "Load_Externals.h"
-#include "Arduino_Parse.h"
+#include "device_IO.h"
+#include "crash_logger.h"
 #include <Dbt.h>
 
 Network_Functionality *System_Tray::nf = nullptr;
-Arduino_Parse *System_Tray::ap = nullptr;
+device_IO *System_Tray::io = nullptr;
 Load_Externals *System_Tray::load = nullptr;
 Settings_GUI *System_Tray::gui = nullptr;
 Settings_OGUI *System_Tray::new_gui = nullptr;
@@ -19,16 +20,15 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 	INT wmid, wmEvent;
 
 	switch (message) {
-
-		case WM_DEVICECHANGE:
-			ap->check_for_disconnection();
-			break;
+	case WM_DEVICECHANGE:
+		io->check_for_disconnection();
+		break;
 
 	case WM_QUERYENDSESSION:
 		if (lParam == 0) {
 			PostQuitMessage(0);
 			Shell_NotifyIcon(NIM_DELETE, &notify);
-			ap->Dehook_from_mixer();
+			io->Dehook_from_mixer();
 		}
 
 		break;
@@ -36,8 +36,8 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 	case WM_CLOSE:
 		PostQuitMessage(0);
 		Shell_NotifyIcon(NIM_DELETE, &notify);
-		ap->Dehook_from_mixer();
-		return 0;
+		io->Dehook_from_mixer();
+		break;
 
 	case WM_APP:
 		switch (lParam) {
@@ -65,15 +65,15 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 				new_gui->terminate_thread();
 			PostQuitMessage(0);
 			Shell_NotifyIcon(NIM_DELETE, &notify);
-			ap->Dehook_from_mixer();
+			io->Dehook_from_mixer();
 			return 0;
 
 		case AM_TOGGLE:
-			ap->Arduino_Display_Toggle();
+			io->Arduino_Display_Toggle();
 			break;
 
 		case AM_TOGGLE_VOLUME:
-			ap->Toggle_Volume_Procentage();
+			io->Toggle_Volume_Procentage();
 			break;
 
 		case AM_UPDATES:
@@ -98,6 +98,14 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 	return DefWindowProc(Handle, message, wParam, lParam);
 }
 
+void System_Tray::exit_sequence() {
+	if (new_gui->get_Open())
+		new_gui->terminate_thread();
+	PostQuitMessage(0);
+	Shell_NotifyIcon(NIM_DELETE, &notify);
+	io->Dehook_from_mixer();
+}
+
 void System_Tray::ShowContextWindow(HWND hwnd) {
 	POINT pt;
 	GetCursorPos(&pt);
@@ -119,18 +127,18 @@ void System_Tray::ShowContextWindow(HWND hwnd) {
 	}
 }
 
-System_Tray::System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext,/* std::unique_ptr<Settings_GUI> *g*/ Settings_GUI *g) {
-	nf = net;
-	ap = ard;
-	load = ext;
+System_Tray::System_Tray(/* std::unique_ptr<Settings_GUI> *g*/ Settings_GUI *g) {
+	nf = new Network_Functionality();
+	io = new device_IO();
+	load = new Load_Externals();
 	gui = g;
 }
 
-System_Tray::System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext,/* std::unique_ptr<Settings_GUI> *g*/ Settings_OGUI *g) {
+System_Tray::System_Tray(/* std::unique_ptr<Settings_GUI> *g*/ Settings_OGUI *g) {
 	new_g = true;
-	nf = net;
-	ap = ard;
-	load = ext;
+	nf = new Network_Functionality();
+	io = new device_IO();
+	load = new Load_Externals();
 	new_gui = g;
 }
 
@@ -139,11 +147,11 @@ System_Tray::~System_Tray(){
 	DestroyWindow(window);
 	UnregisterClass("NON", hinst);
 
-	delete ap;
-	delete nf;
-	delete load;
-	delete gui;
-	delete new_gui;
+	//delete ap;
+	//delete nf;
+	//delete load;
+	//delete gui;
+	//delete new_gui;
 }
 
 void  System_Tray::Start() {
@@ -180,6 +188,9 @@ void System_Tray::Register_System_Tray_Icon(HWND hwnd) {
 
 	if (Shell_NotifyIcon(NIM_ADD, &notify) == FALSE) {
 		printf("Could not add...\n");
+
+		crash_logger ci;
+		ci.log_message_with_last_error(__FUNCTION__);
 		exit(0);
 	}
 }

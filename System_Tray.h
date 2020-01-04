@@ -13,14 +13,14 @@
 
 class Load_Externals;
 class Network_Functionality;
-class Arduino_Parse;
+class device_IO;
 
 class System_Tray {
 private:
 	HWND window;
 	HINSTANCE hinst;
 	std::string tip;
-	static Arduino_Parse *ap;
+	static device_IO *io;
 	static Network_Functionality *nf;
 	static Load_Externals *load;
 	static NOTIFYICONDATA notify;
@@ -28,8 +28,8 @@ private:
 	static Settings_OGUI *new_gui;
 	static bool new_g;
 public:
-	System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext, Settings_GUI *g);
-	System_Tray(Network_Functionality *net, Arduino_Parse *ard, Load_Externals *ext, Settings_OGUI *g);
+	System_Tray(Settings_GUI *g);
+	System_Tray(Settings_OGUI *g);
 	void Start();
 	void Set_Version(std::string ver) { tip = "ARDUINO MIXER PROTOTYPE v." + ver; 	}
 	~System_Tray();
@@ -39,6 +39,7 @@ private:
 	void Register_System_Tray_Icon(HWND hwnd);
 
 public:
+	static void exit_sequence();
 	NOTIFYICONDATA *Get_Notify() const { return &notify; }
 };
 

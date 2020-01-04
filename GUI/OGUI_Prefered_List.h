@@ -4,6 +4,7 @@
 #include <OGUI_Graphics/font.h>
 #include <OGUI_Graphics/textbox.h>
 #include <OGUI_Graphics/rectangle.h>
+#include <OGUI_Graphics/dropdown_list.h>
 #include "Global_Variables.h"
 
 class OGUI_Prefered_List {
@@ -13,9 +14,8 @@ private:
 	ogui::rectangle r;
 	ogui::render_mode *mode;
 	ogui::render_mode *tb_mode;
-	ogui::textbox *tb[36];
-	const int _w = 180;
-	const int _h = 30;
+	ogui::textbox* tb[36];
+	ogui::dropdown_list list[9];
 public:
 	OGUI_Prefered_List(ogui::window_handle *w, ogui::render_mode *m) : window(w), mode(m) {
 
@@ -23,6 +23,15 @@ public:
 
 		for (int a = 0; a < 36; a++) {
 			tb[a] = new ogui::textbox(w);
+		}
+
+		for (int a = 0; a < 9; a++) {
+			list[a].add_item("Audio control");
+			list[a].add_item("Special functions");
+		}
+
+		for (int a = 0; a < 9; a++) {
+			list[a].set_default(global::_page_options[a]._option_index);
 		}
 
 		_f.load_from_file("arial");
@@ -42,6 +51,7 @@ public:
 		for (int a = 0; a < 9; a++) {
 			tb_mode->add_render_mode(a);
 
+			tb_mode->add_component(a, &list[a], ogui::point(125, 200), ogui::cord_point(237, 5));
 			tb_mode->add_component(a, tb[a * 4 + 0], ogui::point(27, 30), ogui::cord_point(70, 60), "UNUSED");
 			tb_mode->add_component(a, tb[a * 4 + 1], ogui::point(27, 30), ogui::cord_point(185, 60), "UNUSED");
 			tb_mode->add_component(a, tb[a * 4 + 2], ogui::point(27, 30), ogui::cord_point(300, 60), "UNUSED");
@@ -55,7 +65,7 @@ public:
 		tb_mode->activate_render_mode(0);
 
 
-		for (int a = 0; a < global::reserved_List.size(); a++) {
+		for (int a = 0; a < (int)global::reserved_List.size(); a++) {
 			tb[global::reserved_List[a].index]->string(global::reserved_List[a].name);
 		}
 
@@ -72,6 +82,29 @@ public:
 			if (tb_mode->activated_render_mode() > 0) {
 				tb_mode->activate_render_mode(tb_mode->activated_render_mode() - 1);
 				mode->get_last_compenent_added(1)->string("page " + std::to_string(tb_mode->activated_render_mode() + 1) + "/9");
+			}
+		}
+		for (int a = 0; a < 9; a++) {
+			if (list[a].pressed()) {
+				global::page_options[tb_mode->activated_render_mode()] = std::to_string(list[a].selected_list()) + ";" + std::to_string(tb_mode->activated_render_mode()) + ";";
+				global::_page_options[tb_mode->activated_render_mode()]._option_index = list[a].selected_list();
+				global::_page_options[tb_mode->activated_render_mode()]._page = tb_mode->activated_render_mode();
+				if (list[a].selected_list() == 0) {
+					tb[(tb_mode->activated_render_mode() * 4) + 0]->string("UNUSED");
+					tb[(tb_mode->activated_render_mode() * 4) + 1]->string("UNUSED");
+					tb[(tb_mode->activated_render_mode() * 4) + 2]->string("UNUSED");
+					tb[(tb_mode->activated_render_mode() * 4) + 3]->string("UNUSED");
+				}
+				else {
+					tb[(tb_mode->activated_render_mode() * 4) + 0]->string("EXTRA");
+					tb[(tb_mode->activated_render_mode() * 4) + 1]->string("EXTRA");
+					tb[(tb_mode->activated_render_mode() * 4) + 2]->string("EXTRA");
+					tb[(tb_mode->activated_render_mode() * 4) + 3]->string("EXTRA");
+				}
+				push_back_new_item((tb_mode->activated_render_mode() * 4) + 0, list[a].selected_list(), true);
+				push_back_new_item((tb_mode->activated_render_mode() * 4) + 1, list[a].selected_list(), true);
+				push_back_new_item((tb_mode->activated_render_mode() * 4) + 2, list[a].selected_list(), true);
+				push_back_new_item((tb_mode->activated_render_mode() * 4) + 3, list[a].selected_list(), true);
 			}
 		}
 	}
@@ -140,7 +173,6 @@ public:
 				}
 			}
 			break;
-
 		}
 	}
 
@@ -164,7 +196,7 @@ public:
 		for (int a = tb_mode->activated_render_mode() * 4; a < (tb_mode->activated_render_mode() * 4) + 4; a++) {
 			if (tb[a]->pressed()) {
 				global::pref.erase(global::pref.begin() + a);
-				for (int b = 0; b < global::reserved_List.size(); b++) {
+				for (int b = 0; b < (int)global::reserved_List.size(); b++) {
 					if (global::reserved_List[b].index == a)
 						global::reserved_List.erase(global::reserved_List.begin() + b);
 				}
@@ -177,19 +209,40 @@ public:
 		tb_mode->draw();
 	}
 
+	void _remote_deactivate() {
+		for (int a = 0; a < 9; a++) {
+			list[a].hide(true);
+		}
+	}
+
+	void _remote_activate() {
+		for (int a = 0; a < 9; a++) {
+			list[a].hide(false);
+		}
+	}
+
 	private:
-		void push_back_new_item(int c_index) {
+		void push_back_new_item(int c_index, int option_index = 0, bool override_inclusion = false) {
 			if (tb[c_index]->string() != "" && tb[c_index]->string() != "UNUSED") {
 				global::pref[c_index] = tb[c_index]->string();
 				bool already_included = false;
-				for (int a = 0; a < global::reserved_List.size(); a++) {
+				for (int a = 0; a < (int)global::reserved_List.size(); a++) {
 					if (global::reserved_List[a].name == tb[c_index]->string()) {
 						already_included = true;
 						break;
 					}
 				}
-				if (!already_included) {
-					global::reserved_List.push_back(reserved(c_index, tb[c_index]->string()));
+				if (!already_included || override_inclusion) {
+					printf("include %i\n", option_index);
+					bool found = false;
+					for (int a = 0; a < global::reserved_List.size(); a++) {
+						if (global::reserved_List[a].index == c_index) {
+							global::reserved_List[a]._option_index = option_index;
+							found = true;
+						}
+					}
+					if(!found)
+						global::reserved_List.push_back(reserved(c_index, tb[c_index]->string(), option_index));
 				}
 			}
 		}
