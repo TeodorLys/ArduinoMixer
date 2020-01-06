@@ -23,3 +23,11 @@ For example: windows music "Groove"s process name is "MUSIC.UI", then you can re
 
 # VERSION 3
 ![ArduinoMixer_Version_3_Mark_2](https://user-images.githubusercontent.com/17643866/59508867-ab8bd600-8eaf-11e9-8e17-ca0de0841388.PNG)
+
+### New Features
+Version 4 has some new hardware features. The volume wheels are now rotary encoders, instead of potentiometer. Which means better customisation and accuracy.
+
+# VERSION 4
+### New Features
+Version 4 has some new hardware features. The volume wheels are now rotary encoders, instead of potentiometer. Which means better customisation and accuracy.
+![VERSION_4](https://user-images.githubusercontent.com/17643866/71835870-fcb12080-30b2-11ea-8ef5-4903f7dcfa72.JPG)
