@@ -37,7 +37,7 @@ HANDLE Network_Functionality::h_mutex;
 std::string Network_Functionality::_last_update;
 
 /*
-This is for the EXTRA functionallity, for the pots.
+This is for the EXTRA functionallity, for the pots. @Deprecated, Can't be used anymore, protocol changed
 */
 void Network_Functionality::send_request(int r, int g, int b) {
 	CURL* curl;
@@ -79,8 +79,8 @@ void Network_Functionality::Download_single_file(std::string _filename, std::str
 	args += _filename + "\"}";
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
-		//yes i know... should really NOT use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		//yes i know... should really not use a "static" access token, but github was not very reliable...
+		list = curl_slist_append(list, "Authorization: Bearer vADqFIv5AnQAAAAAAAAADE7r9DJpeLInASfi6o5H5KsdyryX7RJRQqpL5IAusLGE");
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
 
@@ -128,7 +128,7 @@ bool Network_Functionality::Download_Updates() {
 	args += _last_update + "\"}";
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
-		//yes i know... should really not use a "static" access token, but github was not very reliable...
+		//yes i know... really shouldnt not use a "static" access token, but github was not very reliable...
 		list = curl_slist_append(list, "Authorization: Bearer vADqFIv5AnQAAAAAAAAADE7r9DJpeLInASfi6o5H5KsdyryX7RJRQqpL5IAusLGE");
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
@@ -211,9 +211,11 @@ bool Network_Functionality::Check_For_Updates(bool quiet_Mode) {
 		res = curl_easy_perform(curl);
 
 		if (res != CURLE_OK) {
-			printf("Could not connect to the internet!\n");
-			BalloonTip::Call_BallonTip("CONNECTION ERROR", "Could not connect to the internet");
-			BalloonTip::_Set_Identifier(2);
+			if (quiet_Mode) {
+				printf("Could not connect to the internet!\n");
+				BalloonTip::Call_BallonTip("CONNECTION ERROR", "Could not connect to the internet");
+				BalloonTip::_Set_Identifier(2);
+			}
 			return false;
 		}
 	}
@@ -247,7 +249,7 @@ bool Network_Functionality::Check_For_Updates(bool quiet_Mode) {
 		/*
 		If quiet_mode is true, it means that the program desided to check
 		for updates(for ex. time based). if it's false, it means that the
-		user clicked the "Check for updates button".
+		user clicked the "Check for updates" button.
 		i.e. no notification will be sent if quiet mode is active!
 		*/
 		if (!quiet_Mode) {

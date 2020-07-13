@@ -116,8 +116,8 @@ std::string Audio_Controller::Check_For_New_Name(std::string s) {
 Audio_Volume_Variables Audio_Controller::Enumarate_Audio_Session(int index) {
 	Audio_Volume_Variables buff;
 	HRESULT hr = 0;
-	pSessionEnum->GetSession(index, &pSessionControl);
-	pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)& buff.control);
+	hr = pSessionEnum->GetSession(index, &pSessionControl);
+	hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)& buff.control);
 	buff.display_Name = Get_Session_Display_Name(&pSessionControl);
 	buff.control->GetMasterVolume(&buff.last_Value);
 	buff.control->GetMute((BOOL*)& buff.mute);
@@ -175,11 +175,11 @@ Audio_Controller::Audio_Controller(AudioSession* v1, AudioSession* v2, AudioSess
 	std::vector<Audio_Volume_Variables> temp;
 
 	/*
-	Getting all active audio sessions, the PID name and current volume.
+	Get all active audio sessions, Process name and current volume.
 	*/
 	for (int a = 0; a < old_Count; a++) {
 		buff = Enumarate_Audio_Session(a);
-
+		format_sessions::get().assign_session_spot(a, buff.display_Name);
 		if (Check_for_Restrictions(buff.display_Name)) {
 			temp.push_back(buff);
 		}
@@ -401,6 +401,20 @@ void Audio_Controller::Rerender_Audio_Displays() {
 
 //New EXCLUTION based pop back
 void Audio_Controller::Pop_Back_Audio_Controller() {
+	format_sessions::get().push_sessions_to_buffer();
+	session _removed = format_sessions::get().get_recently_closed_program();
+
+	printf("Removed: %s\n", _removed.name.c_str());
+
+	for (int a = 0; a < 36; a++) {
+		if (format_sessions::get().compare_session(_removed.name, a)) {
+			format_sessions::get().deallocate_session(a);
+			break;
+		}
+	}
+
+	format_sessions::get().reconstruct_sessions();
+
 	printf("\nPOP_BACK\n");
 	for (int a = 0; a < (int)sliders.size(); a++) {
 		if (sliders[a].display_Name != "UNUSED") {
@@ -468,13 +482,30 @@ void Audio_Controller::Pop_Back_Audio_Controller() {
 	}
 		SAFE_RELEASE(pSession);
 		CoUninitialize();
-}
+}/*---</Pop_Back_Audio_Controller>---*/
 
 void Audio_Controller::Push_Back_Audio_Controller() {
 	printf("\nPUSH_BACK\n");
 
+	format_sessions::get().push_sessions_to_buffer();
+
+	session _added = format_sessions::get().get_recently_opened_program();
+
+	if (format_sessions::get().is_reserverd(_added.name)) {
+		for (int a = 0; a < format_sessions::get().get_reserv_size(); a++) {
+			if (format_sessions::get().get_reserv_session(a).name == _added.name) {
+				format_sessions::get().get(format_sessions::get().get_reserv_session(a).index).name = format_sessions::get().get_reserv_session(a).name;
+			}
+		}
+	}
+	else {
+		format_sessions::get().assign_next_unused_spot(_added.name);
+	}
+
+	format_sessions::get().reconstruct_sessions();
+
 	/*
-	Releases all of the controls, will rewrite then later on.
+	Releases all of the controls, will rewrite them later on.
 	Otherwise there will be an access violation,
 	when I try to find the newly added program, I need to re:enumerate the controls
 	which makes the "old" ones invalid

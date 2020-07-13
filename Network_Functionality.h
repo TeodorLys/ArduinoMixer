@@ -13,15 +13,26 @@ private:
 		return size * nmemb;
 	}
 public:
+	/*
+	Downloads the version.txt from dropbox, quiet mode is for auto check update.
+	*/
 	bool Check_For_Updates(bool quiet_Mode);
 	bool Download_Updates();
+	/*
+	Example, the chrome integration files.
+	*/
 	void Download_single_file(std::string _filename, std::string _outfile);
+	/*
+	@Deprecated
+	*/
 	static void send_request(int r, int g, int b);
 public:
 	static std::string& last_update() {
 		return _last_update;
 	}
-
+	/*
+	For when we update the program, we need to release the mutex, so we can restart the program...
+	*/
 	void Give_Mutex_Handle(HANDLE h) { h_mutex = h; }
 	void set_Version(std::string v) { version = v; }
 	static bool _has_internet_connection() {

@@ -6,6 +6,7 @@
 #include <OGUI_Graphics/rectangle.h>
 #include <OGUI_Graphics/dropdown_list.h>
 #include "Global_Variables.h"
+#include "format_sessions.h"
 
 class OGUI_Prefered_List {
 private:
@@ -27,7 +28,8 @@ public:
 
 		for (int a = 0; a < 9; a++) {
 			list[a].add_item("Audio control");
-			list[a].add_item("Special functions");
+			if(global::experimental)
+				list[a].add_item("Special functions");
 		}
 
 		for (int a = 0; a < 9; a++) {
@@ -226,6 +228,9 @@ public:
 			if (tb[c_index]->string() != "" && tb[c_index]->string() != "UNUSED") {
 				global::pref[c_index] = tb[c_index]->string();
 				bool already_included = false;
+
+				format_sessions::get().reserv_spot(c_index, tb[c_index]->string());
+
 				for (int a = 0; a < (int)global::reserved_List.size(); a++) {
 					if (global::reserved_List[a].name == tb[c_index]->string()) {
 						already_included = true;

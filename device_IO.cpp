@@ -36,7 +36,7 @@ std::string device_IO::Parse_Display_Text() {
 	/*
 	Versions 4 and up uses encoders for the volume controller,
 	which means you can set the starting volume to anything you want!
-	with 3 and down, potentiometers were used.
+	with v.3 and down, potentiometers were used.
 	*/
 	if (global::version >= 4)
 		buffer += ";" + volume_buffer;
@@ -63,11 +63,18 @@ void device_IO::Try_to_Connect() {
 }
 
 void device_IO::Get_Mixer_Version() {
-	arduino.writeTo("y", 1);
-	Sleep(10);
-	char buffer[] = "0";
-	int t = arduino.recieveFrom(buffer, 1);
-	global::version = (int)buffer[0] - 48;
+	arduino.writeTo(CALL_INFO_COMMAND.c_str(), 2);
+	char buffer[256] = "";
+	int t = arduino.recieveFrom(buffer, 256);
+	std::string temp = buffer;
+	temp.erase(0, 1);
+	printf("%s\n", temp.c_str());
+	info_packet.hardware_version = temp[0];
+	printf("%s\n", info_packet.hardware_version.c_str()); 
+	info_packet.i_hardware_version = temp[0] - 48;
+	info_packet.software_version = temp[2];
+	info_packet.creator = temp.substr(temp.find(";") + 1, temp.find("}")-6);
+	printf("%s, %s, %s\n", info_packet.hardware_version.c_str(), info_packet.software_version.c_str(), info_packet.creator.c_str());
 }
 
 void device_IO::Update_LCD_Screen() {
@@ -81,7 +88,7 @@ void device_IO::Update_LCD_Screen() {
 void device_IO::Arduino_Display_Toggle() {
 	/*Sends a "|"((char)124) to the arduino because any other text or such
 			will be parsed as a update LCD screen function*/
-	std::string temp = "|";
+	std::string temp = CALL_TOGGLE_SCREEN;
 	if (is_Connected) {
 		arduino.writeTo(temp.c_str(), temp.size());
 		display_Off = true;
@@ -91,9 +98,10 @@ void device_IO::Arduino_Display_Toggle() {
 }
 
 void device_IO::Toggle_Volume_Procentage() {
-	/*Sends a "{"((char)123) to the arduino because any other text or such
+	/*Sends a "{"((char)124) to the arduino because any other text or such
 		will be parsed as a update LCD screen function*/
-	std::string temp = "{";
+	std::string temp = CALL_TOGGLE_VOLUME;
+	printf("%s\n", temp.c_str());
 	if (is_Connected) {
 		arduino.writeTo(temp.c_str(), temp.size());
 	}
@@ -104,7 +112,7 @@ void device_IO::Toggle_Volume_Procentage() {
 void device_IO::Dehook_from_mixer() {
 	/*Sends a "}"((char)125) to the arduino because any other text or such
 		will be parsed as a update LCD screen function*/
-	std::string temp = "}";
+	std::string temp = CALL_DRIVER_OFF;
 	if (is_Connected) {
 		arduino.writeTo(temp.c_str(), temp.size());
 		is_Connected = false;
@@ -135,7 +143,7 @@ bool device_IO::Recieved_NULL_for_a_Time(int t) {
 }
 
 void device_IO::check_for_disconnection() {
-	std::string temp = "z";
+	std::string temp = CALL_CHECK_COMMAND;
 	if (is_Connected) {
 		if (!arduino.writeTo(temp.c_str(), temp.size())) {
 			printf("disconnected!\n");

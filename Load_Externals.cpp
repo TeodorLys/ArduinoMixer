@@ -90,6 +90,8 @@ void Load_Externals::Parse_Document_Path() {
 	global::documents_Settings_Path = documents_Path + "\\ArduinoMixerData";
 }
 
+
+
 void Load_Externals::Try_Load_Externals(bool update) {
 	settings_Path = documents_Path + "\\ArduinoMixerData\\settings.ini";
 	//settings = new SaveSettings(settings_Path, false);
@@ -117,11 +119,17 @@ void Load_Externals::Settings_Load() {
 
 
 	libconfig::Setting& root = cfg.getRoot();
+
+	if (!root.exists("system")) {
+		rewrite_system_data();
+	}
+
 	if (!root.exists("basic")) {
 		rewrite_all_data();
 		return;
 	}
 	libconfig::Setting& basic = root["basic"];
+	libconfig::Setting& system = root["system"];
 
 	if(!basic.exists("Enable_Logging"))
 		basic.add("Enable_Logging", libconfig::Setting::TypeBoolean) = is_Logging;
@@ -131,10 +139,6 @@ void Load_Externals::Settings_Load() {
 		basic.add("Waiting_Update", libconfig::Setting::TypeBoolean) = global::waiting_Update;
 	else 
 		basic.lookupValue("Waiting_Update", global::waiting_Update);
-	if(!basic.exists("Com_Port"))
-		basic.add("Com_Port", libconfig::Setting::TypeString) = device_IO::com_port();
-	else
-		basic.lookupValue("Com_Port", device_IO::com_port());
 	if(!basic.exists("Last_Update"))
 		basic.add("Last_Update", libconfig::Setting::TypeString) = Network_Functionality::last_update();
 	else
@@ -195,6 +199,16 @@ void Load_Externals::Settings_Load() {
 	else 
 		basic.lookupValue("Auto_Update", global::auto_update);
 
+	if (!system.exists("Container_ID"))
+		system.add("Container_ID", libconfig::Setting::TypeString) = global::container_id;
+	else
+		system.lookupValue("Container_ID", global::container_id);
+
+	if (!system.exists("Com_Port"))
+		system.add("Com_Port", libconfig::Setting::TypeString) = device_IO::com_port();
+	else
+		system.lookupValue("Com_Port", device_IO::com_port());
+
 	write_to_file();
 }
 
@@ -213,10 +227,10 @@ void Load_Externals::Settings_Save_Variables() {
 
 	libconfig::Setting& root = cfg.getRoot();
 	libconfig::Setting& basic = root["basic"];
+	libconfig::Setting& system = root["system"];
 
 	basic["Enable_Logging"] = is_Logging;
 	basic["Waiting_Update"] = global::waiting_Update;
-	basic["Com_Port"] = device_IO::com_port();
 	basic["Last_Update"] = Network_Functionality::last_update();
 	basic.remove("Exclude_List");
 	libconfig::Setting& exclude = basic.add("Exclude_List", libconfig::Setting::TypeArray);
@@ -236,6 +250,22 @@ void Load_Externals::Settings_Save_Variables() {
 		page.add(libconfig::Setting::TypeString) = global::page_options[a];
 	basic["Chrome_key_combo"] = global::ci_key;
 	basic["Auto_Update"] = global::auto_update;
+
+	system["Com_Port"] = device_IO::com_port();
+	system["Container_ID"] = global::container_id;
+
+	write_to_file();
+}
+
+void Load_Externals::write_system_data() {
+	libconfig::Setting& root = cfg.getRoot();
+	if (!root.exists("system")) {
+		rewrite_system_data();
+		return;
+	}
+	libconfig::Setting& system = root["system"];
+	system["Com_Port"] = device_IO::com_port();
+	system["Container_ID"] = global::container_id;
 	write_to_file();
 }
 
@@ -321,7 +351,7 @@ void Load_Externals::Create_File() {
 	global::to_Exclude.push_back("SYSTEM");
 	global::to_Exclude.push_back("SHELLEX");
 	std::fstream file(settings_Path, std::fstream::out);
-	_Get_COM_From_Reg();
+//	_Get_COM_From_Reg();
 	file.close();
 	global::enable_logging = is_Logging;
 	for (int a = 0; a < 36; a++) {
@@ -332,7 +362,6 @@ void Load_Externals::Create_File() {
 	libconfig::Setting& basic = root.add("basic", libconfig::Setting::TypeGroup);
 	basic.add("Enable_Logging", libconfig::Setting::TypeBoolean) = is_Logging;
 	basic.add("Waiting_Update", libconfig::Setting::TypeBoolean) = global::waiting_Update;
-	basic.add("Com_Port", libconfig::Setting::TypeString) = device_IO::com_port();
 	basic.add("Last_Update", libconfig::Setting::TypeString) = Network_Functionality::last_update();
 	libconfig::Setting &exclude = basic.add("Exclude_List", libconfig::Setting::TypeArray);
 	for (int a = 0; a < (int)global::to_Exclude.size(); a++)
@@ -349,6 +378,11 @@ void Load_Externals::Create_File() {
 
 	basic.add("Chrome_key_combo", libconfig::Setting::TypeString) = global::ci_key;
 	basic.add("Auto_Update", libconfig::Setting::TypeBoolean) = global::auto_update;
+
+	libconfig::Setting& system = root.add("system", libconfig::Setting::TypeGroup);
+	system.add("Com_Port", libconfig::Setting::TypeString) = device_IO::com_port();
+	system.add("Container_ID", libconfig::Setting::TypeString) = global::container_id;
+
 	write_to_file();
 
 	//file.open(settings_Path, std::fstream::out);
@@ -366,7 +400,6 @@ void Load_Externals::rewrite_all_data() {
 	libconfig::Setting& basic = root.add("basic", libconfig::Setting::TypeGroup);
 	basic.add("Enable_Logging", libconfig::Setting::TypeBoolean) = is_Logging;
 	basic.add("Waiting_Update", libconfig::Setting::TypeBoolean) = global::waiting_Update;
-	basic.add("Com_Port", libconfig::Setting::TypeString) = device_IO::com_port();
 	basic.add("Last_Update", libconfig::Setting::TypeString) = Network_Functionality::last_update();
 	libconfig::Setting& exclude = basic.add("Exclude_List", libconfig::Setting::TypeArray);
 	for (int a = 0; a < (int)global::to_Exclude.size(); a++)
@@ -383,7 +416,15 @@ void Load_Externals::rewrite_all_data() {
 
 	basic.add("Chrome_key_combo", libconfig::Setting::TypeString) = global::ci_key;
 	basic.add("Auto_Update", libconfig::Setting::TypeBoolean) = global::auto_update;
+	rewrite_system_data();
 	write_to_file();
+}
+
+void Load_Externals::rewrite_system_data() {
+	libconfig::Setting& root = cfg.getRoot();
+	libconfig::Setting& system = root.add("system", libconfig::Setting::TypeGroup);
+	system.add("Com_Port", libconfig::Setting::TypeString) = device_IO::com_port();
+	system.add("Container_ID", libconfig::Setting::TypeString) = global::container_id;
 }
 
 void Load_Externals::Complete_Update_Preload_File() {

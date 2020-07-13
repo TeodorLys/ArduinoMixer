@@ -12,9 +12,10 @@
 #include "Audio_Controller.h"
 #include "System_Tray.h"
 #include "crash_logger.h"
+#include "initialize_device.h"
 #include <Log_Print.h>
 
-#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#pragma comment(linker, "/SUBSYSTEM:console /ENTRY:mainCRTStartup")
 
 const std::string version = "2.4.0";
 
@@ -26,6 +27,8 @@ int main(int argc, char** argv) {
 	Network_Functionality nf;
 	Load_Externals load;
 	Chrome_Integration ci;
+	initialize_device io_init;
+
 	FILE* new_stdout;
 
 	Set_Log_Print_Level(0);
@@ -33,74 +36,17 @@ int main(int argc, char** argv) {
 	if (argc > 1) {
 		std::string arg = argv[1];
 		if (arg == "-c_connect") {
-			ci.Register_Native_Messaging_Host();
-			ci.Reopen_Elevated("ArduinoMixer.exe", "-after_chrome_integration", false);
-
-			if (AllocConsole() == 0) {
-				crash_logger cl;
-				cl.log_message_with_last_error(__FUNCTION__);
-				exit(0);
-			}
-			errno_t err;
-			err = freopen_s(&new_stdout, "CONOUT$", "w", stdout); // Output for console
-			if (err != 0) {
-				crash_logger cl;
-				cl.log_message("could not create console out", __FUNCTION__);
-				exit(0);
-			}
-
-			err = freopen_s(&new_stdout, "CONIN$", "r", stdin);  // Input for console
-
-			if (err != 0) {
-				crash_logger cl;
-				cl.log_message("could not create console in", __FUNCTION__);
-				exit(0);
-			}
-
-			if (AttachConsole(GetProcessId(GetStdHandle(-10))) == 0) {
-				crash_logger cl;
-				cl.log_message_with_last_error(__FUNCTION__);
-				exit(0);
-			}
-
-			std::string	explorer = std::filesystem::current_path().string() + "\\am_c_integration";
-
-			ShellExecute(0, "open", "explorer", explorer.c_str(), NULL, SW_SHOW);
-
-			printf("----------------------------------------------------------------------\n");
-			printf("Go to extensions within chrome\n");
-			printf("Click on \"add uncompressed extension\"\n");
-			printf("and choose the extension folder within the am_c_integration folder\n");
-			printf("then copy the id ex.\"gighmmpiobklfepjocnamgkkbiglidom\"\n");
-			printf("and paste it here\n");
-			printf("p.s. dont forget to restart the extension\n");
-			printf("----------------------------------------------------------------------\n");
-		_tryagain:
-			printf("> ");
-			std::string answer;
-			std::getline(std::cin, answer);
-
-			const std::string compare = "abcdefghijklmnopqrstuvwxyz";
-			if (answer == "") {
-				goto _tryagain;
-			}
-			for (char c : answer) {
-				if (compare.find(c) == std::string::npos) {
-					printf("could not parse id, please recopy it and paste it, dont include \"id:\"\n");
-					goto _tryagain;
-				}
-			}
-
-
-			ci.NMA_Manifest_Creation(answer);
-
-			exit(0);
+			ci.Initialize_Extension_after_Install();
 		}
 		else if (arg == "-after_chrome_integration") {
 			auto_open_settings = true;
 		}
 	}
 
+
+	/*
+	A safety feature, so you cant have two instances of the mixer...
+	*/
 	nf.Give_Mutex_Handle(CreateMutex(0, FALSE, "Local\\$arduino$mixer$"));
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 		exit(0);
@@ -130,6 +76,22 @@ int main(int argc, char** argv) {
 		load.Try_Load_Externals(false); // Loading settings file and such
 	}
 
+	/*
+	For the enumeration of the mixer, by the device container id, which I hope is a static and "global"
+	variable...
+	If the end user has multiple Teensy chips connected, this makes sure that we connect to the correct device.
+	*/
+	if (global::container_id == "{}") {
+		io_init.retry_devices();  // Connects to all found devices and does a retrieve device info call.
+	}
+	else {
+		io_init.find_device_by_container_id();
+	}
+
+	/*
+	Recently_updated is a file created by the updater program, so this program
+	can remove all the temporary install files.
+	*/
 	if (std::filesystem::exists(global::documents_Settings_Path + "\\RECENTLY_UPDATED.txt")) {
 		printf("Recently Updated\n");
 		global::waiting_Update = false;
@@ -159,7 +121,7 @@ int main(int argc, char** argv) {
 		err = freopen_s(&new_stdout, "CONOUT$", "w", stdout); // Output for console
 		if (err != 0) {
 			crash_logger cl;
-			cl.log_message("could not create console out", __FUNCTION__);
+			cl.log_message("could not create console output", __FUNCTION__);
 			FreeConsole();
 			goto skip_console;
 		}
@@ -168,7 +130,7 @@ int main(int argc, char** argv) {
 
 		if (err != 0) {
 			crash_logger cl;
-			cl.log_message("could not create console in", __FUNCTION__);
+			cl.log_message("could not create console input", __FUNCTION__);
 			FreeConsole();
 			goto skip_console;
 		}
@@ -199,7 +161,6 @@ skip_console:
 	msg.message = ~WM_QUIT;
 	int frame = 0;
 	sf::Clock c;
-	self::Arduino_API api;
 
 	io.Parse_Display_Text();
 
@@ -209,14 +170,6 @@ skip_console:
 		if (!io._Is_Connected() && clock.getElapsedTime().asMilliseconds() >= 500) {
 			io.Try_to_Connect();
 			clock.restart();
-		}
-		else if (!io._Is_Connected() && !global::prog_ending) {
-			std::string temp = api.Get_Specific_Arduino_Port(1000000, "AM", "~");
-			if (device_IO::com_port() != temp && temp != "") {
-				device_IO::com_port() = temp;
-				load.Update_Save_File();
-			}
-			Sleep(50);
 		}
 
 		if (global::auto_update && update_clock.getElapsedTime().asSeconds() >= 1800) {
@@ -241,6 +194,7 @@ skip_console:
 				this function(below) both acts as a set volume function,
 				and as a check for new programs function, also if a
 				program was opened or closed.
+				TODO: Two separate functions maybe.
 				*/
 				if (!ac.Set_Volume())
 					io.Update_LCD_Screen();  //Updating the text on the arduino lcd/oled(LE-v.3) screen.

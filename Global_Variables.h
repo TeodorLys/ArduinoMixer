@@ -46,8 +46,9 @@ namespace global {
 	//extern std::string com_Port;
 	//extern std::string update_Time;
 	extern std::string documents_Settings_Path;
-	extern std::string ci_key;
-	extern int version;
+	extern std::string ci_key; // Chrome integration hotkey
+	extern std::string container_id; // Teensy chip container id, got from within the regkey.
+	extern int version; 
 	extern int ci_key_hex;
 	extern int ci_add_hex;
 	extern volatile int page_Number;
@@ -56,12 +57,13 @@ namespace global {
 	extern bool waiting_Update;
 	extern bool enable_logging;
 	extern bool auto_update;
-	extern bool prog_ending;
+	extern bool prog_ending; // when the program is prepering for closing.
+	extern bool experimental;
 	extern std::vector<std::string> to_Exclude;
 	extern std::vector<reserved> reserved_List;
 	extern std::vector<std::string> rename_list;
 	extern std::vector<rename_session> renamed;
 	extern std::vector<page_spec> _page_options;
 	extern std::vector<std::string> page_options;
-	extern sf::Font font;
+	extern sf::Font font;  // @Deprecated Should probably remove this...
 }

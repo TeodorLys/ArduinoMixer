@@ -6,6 +6,7 @@ namespace global {
 	//std::string update_Time = "1997-10-11T19:57:47";
 	std::string documents_Settings_Path = "";
 	std::string ci_key;
+	std::string container_id = "{}";
 	int version;
 	int ci_key_hex;
 	int ci_add_hex = 0;
@@ -16,6 +17,7 @@ namespace global {
 	bool enable_logging = false;
 	bool auto_update = true;
 	bool prog_ending = false;
+	bool experimental = false;
 	std::vector<std::string> to_Exclude;
 	std::vector<reserved> reserved_List;
 	std::vector<std::string> rename_list;

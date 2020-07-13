@@ -4,8 +4,10 @@
 #include "Global_Variables.h"
 #include "Zip_File_Handler.h"
 #include "System_Tray.h"
+#include "crash_logger.h"
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 Chrome_Integration::Chrome_Integration() {
 	packet << "pp";
@@ -77,6 +79,69 @@ void Chrome_Integration::NMA_Manifest_Creation(std::string id) {
 	std::fstream file(current_p + "\\am_c_integration\\manifest.json", std::fstream::out);
 	file << manifest;
 	file.close();
+}
+
+void Chrome_Integration::Initialize_Extension_after_Install() {
+	FILE* new_stdout;
+	Register_Native_Messaging_Host();
+	Reopen_Elevated("ArduinoMixer.exe", "-after_chrome_integration", false);
+
+	if (AllocConsole() == 0) {
+		crash_logger cl;
+		cl.log_message_with_last_error(__FUNCTION__);
+		exit(0);
+	}
+	errno_t err;
+	err = freopen_s(&new_stdout, "CONOUT$", "w", stdout); // Output for console
+	if (err != 0) {
+		crash_logger cl;
+		cl.log_message("could not create console out", __FUNCTION__);
+		exit(0);
+	}
+
+	err = freopen_s(&new_stdout, "CONIN$", "r", stdin);  // Input for console
+
+	if (err != 0) {
+		crash_logger cl;
+		cl.log_message("could not create console in", __FUNCTION__);
+		exit(0);
+	}
+
+	if (AttachConsole(GetProcessId(GetStdHandle(-10))) == 0) {
+		crash_logger cl;
+		cl.log_message_with_last_error(__FUNCTION__);
+		exit(0);
+	}
+
+	std::string	explorer = std::filesystem::current_path().string() + "\\am_c_integration";
+
+	ShellExecute(0, "open", "explorer", explorer.c_str(), NULL, SW_SHOW);
+
+	printf("----------------------------------------------------------------------\n");
+	printf("Go to extensions within chrome\n");
+	printf("Click on \"add uncompressed extension\"\n");
+	printf("and choose the extension folder within the am_c_integration folder\n");
+	printf("then copy the id ex.\"gighmmpiobklfepjocnamgkkbiglidom\"\n");
+	printf("and paste it here\n");
+	printf("p.s. dont forget to restart the extension\n");
+	printf("----------------------------------------------------------------------\n");
+_tryagain:
+	printf("> ");
+	std::string answer;
+	std::getline(std::cin, answer);
+
+	const std::string compare = "abcdefghijklmnopqrstuvwxyz";
+	if (answer == "") {
+		goto _tryagain;
+	}
+	for (char c : answer) {
+		if (compare.find(c) == std::string::npos) {
+			printf("could not parse id, please recopy it and paste it, dont include \"id:\"\n");
+			goto _tryagain;
+		}
+	}
+	NMA_Manifest_Creation(answer);
+	exit(0);
 }
 
 void Chrome_Integration::Manifest_Creation() {
@@ -203,4 +268,3 @@ void Chrome_Integration::check_for_keypress() {
 		}
 	}
 }
-

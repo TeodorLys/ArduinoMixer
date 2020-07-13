@@ -6,8 +6,10 @@
 #include "Load_Externals.h"
 #include "device_IO.h"
 #include "crash_logger.h"
+
 #include <Dbt.h>
 
+initialize_device System_Tray::io_init;
 Network_Functionality *System_Tray::nf = nullptr;
 device_IO *System_Tray::io = nullptr;
 Load_Externals *System_Tray::load = nullptr;
@@ -22,6 +24,8 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 	switch (message) {
 	case WM_DEVICECHANGE:
 		io->check_for_disconnection();
+		if(!io->_Is_Connected())
+			io_init.reenumeration();
 		break;
 
 	case WM_QUERYENDSESSION:
