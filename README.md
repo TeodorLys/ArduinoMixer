@@ -18,13 +18,19 @@ This always take priority!
 Since ArduinoMixer gets the process name of all sessions it might be a weird name.
 For example: windows music "Groove"s process name is "MUSIC.UI", then you can rename it to "GROOVE". 
 
-# VERSION 2
-![img_20190220_165407__01](https://user-images.githubusercontent.com/17643866/53105077-c3220600-3530-11e9-8349-2fe2258260be.jpg)
-
-# VERSION 3
-![ArduinoMixer_Version_3_Mark_2](https://user-images.githubusercontent.com/17643866/59508867-ab8bd600-8eaf-11e9-8e17-ca0de0841388.PNG)
-
 # VERSION 4
 ### New Features
 Version 4 has some new hardware features. The volume wheels are now rotary encoders, instead of potentiometer. Which means better customisation and accuracy.
-![VERSION_4](https://user-images.githubusercontent.com/17643866/71835870-fcb12080-30b2-11ea-8ef5-4903f7dcfa72.JPG)
+<p align="center">
+<img src="doc/ArduinoMixer_v_4.jpg" align="center"/> 
+ </p>
+
+# VERSION 3
+<p align="center">
+<img src="doc/ArduinoMixer_v_3.jpg" align="center"/> 
+ </p>
+
+# VERSION 2
+<p align="center">
+<img src="doc/ArduinoMixer_v_2.jpg" align="center"/> 
+ </p>
