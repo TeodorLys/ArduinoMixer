@@ -80,7 +80,7 @@ void Network_Functionality::Download_single_file(std::string _filename, std::str
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
 		//yes i know... should really not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer vADqFIv5AnQAAAAAAAAADE7r9DJpeLInASfi6o5H5KsdyryX7RJRQqpL5IAusLGE");
+		list = curl_slist_append(list, "Authorization: Bearer <TOKEN>");
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
 
@@ -129,7 +129,7 @@ bool Network_Functionality::Download_Updates() {
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
 		//yes i know... really shouldnt not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer vADqFIv5AnQAAAAAAAAADE7r9DJpeLInASfi6o5H5KsdyryX7RJRQqpL5IAusLGE");
+		list = curl_slist_append(list, "Authorization: Bearer <TOKEN>");
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
 
@@ -201,7 +201,7 @@ bool Network_Functionality::Check_For_Updates(bool quiet_Mode) {
 	std::string out;
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
-		list = curl_slist_append(list, "Authorization: Bearer vADqFIv5AnQAAAAAAAAADE7r9DJpeLInASfi6o5H5KsdyryX7RJRQqpL5IAusLGE");
+		list = curl_slist_append(list, "Authorization: Bearer <TOKEN>");
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, "Dropbox-API-Arg: {\"path\":\"/VERSION.txt\"}");
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
