@@ -1,7 +1,7 @@
 #pragma once
-#include "Settings_OGUI.h"
-#include "Settings_GUI.h"
+#include "Settings_WPF.h"
 #include "initialize_device.h"
+#include "update_handler.h"
 #include <Windows.h>
 
 
@@ -12,8 +12,8 @@
 #define AM_TOGGLE WM_APP + 5
 #define AM_TOGGLE_VOLUME WM_APP + 6
 
-class Load_Externals;
-class Network_Functionality;
+class settings_handler;
+class network_handler;
 class device_IO;
 
 class System_Tray {
@@ -26,23 +26,17 @@ private:
 	*/
 	static initialize_device io_init;
 	static device_IO *io;
-	static Network_Functionality *nf;
-	static Load_Externals *load;
+	static update_handler *_update;
+	static settings_handler *load;
 	static NOTIFYICONDATA notify;
-	static Settings_GUI	 *gui;
-	static Settings_OGUI *new_gui;
+	static Settings_WPF* wpf;
 	static bool new_g;
 public:
-	System_Tray(Settings_GUI *g); /*@DEPRECATED!*/
-	System_Tray(Settings_OGUI *g);
+	System_Tray(Settings_WPF* g);
 	/*
 	Initilize the system tray window.
 	*/
 	void Start();
-	/*
-	MAYBE TODO: do this in the start function. ^
-	*/
-	void Set_Version(std::string ver) { tip = "ARDUINO MIXER PROTOTYPE v." + ver; 	}
 	~System_Tray();
 private:
 	static LRESULT CALLBACK OnEvent(HWND Handle, UINT message, WPARAM wParam, LPARAM lParam);

@@ -1,8 +1,9 @@
 #pragma once
 #include <curl/curl.h>
+#include <vector>
 #include <string>
 
-class Network_Functionality {
+class network_handler {
 private:
 	bool check_BETA = false;
 	static std::string version;
@@ -21,7 +22,10 @@ public:
 	/*
 	Example, the chrome integration files.
 	*/
-	void Download_single_file(std::string _filename, std::string _outfile);
+	bool Download_single_file(std::string _filename, std::string _outfile);
+	std::string download_single_stream(std::string _filename);
+	std::string find_file_in_dropbox(std::string query, bool case_sensetive = true);
+	std::vector<std::string> list_files_in_dropbox(std::string query, bool case_sensetive = false);
 	/*
 	@Deprecated
 	*/
@@ -34,7 +38,7 @@ public:
 	For when we update the program, we need to release the mutex, so we can restart the program...
 	*/
 	void Give_Mutex_Handle(HANDLE h) { h_mutex = h; }
-	void set_Version(std::string v) { version = v; }
+	HANDLE &get_mutex_handle() { return h_mutex; }
 	static bool _has_internet_connection() {
 		CURL *curl;
 		CURLcode res;
@@ -52,7 +56,6 @@ public:
 				curl_easy_cleanup(curl);
 				return true;
 			}
-			
 		}
 		return false;
 	}

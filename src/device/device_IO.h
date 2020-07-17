@@ -67,7 +67,7 @@ public:
 	Will still read mixer output, but the amount of bytes is 0
 	for 1sec it will disconnect and try again.
 	*/
-	bool Recieved_NULL_for_a_Time(int t);
+	bool Recieved_NULL_for_a_Time();
 	/*
 	System_Tray class will call on this function, if it retrieves a WM_DEVICECHANGE event,
 	to see if the mixer was disconnected.
@@ -76,6 +76,8 @@ public:
 	bool is_Display_Off() { return display_Off; }
 	bool _Is_Connected() { return is_Connected; }
 public:
+
+	device_info get_device_info() { return info_packet; }
 
 	static std::string& com_port() {
 		return _com_port;

@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <string>
-#include "Network_Functionality.h"
+#include "network_handler.h"
 
 class BalloonTip {
 private:

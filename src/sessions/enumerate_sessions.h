@@ -10,7 +10,7 @@
 
 struct session {
 	std::string name = "UNUSED";
-	std::string reserved_name;
+	std::string reserved_name = "UNUSED";
 	bool reserved = false;
 	bool mute;
 	ISimpleAudioVolume* control = NULL;
@@ -24,10 +24,21 @@ private:
 	IAudioSessionControl* pSessionControl = 0;
 
 public:
-	session* Enumarate_Audio_Session(int index);
+	session Enumarate_Audio_Session(int index);
+	/*
+	Returns the audio session name from the process it self.
+	Because, for some reason the retrieval of the audio session name was
+	very unreliable... probably user error!
+	*/
 	std::string Get_Session_Display_Name(IAudioSessionControl** pSessionControl);
 	HRESULT CreateSessionManager(IAudioSessionManager2** ppSessionManager);
 
+	/*
+	(re)initializes the session manager variable, which you can 
+	extract sessioncontroller from (sort of...)
+
+	TODO: Have a check for already initialized pSession!
+	*/
 	void reinitialize() {
 		CreateSessionManager(&pSession);
 		pSession->GetSessionEnumerator(&pSessionEnum);
@@ -44,7 +55,7 @@ public:
 
 		SAFE_RELEASE(pEnum);
 		SAFE_RELEASE(pSez);
-		CoUninitialize();
+		CoUninitialize();      
 		return b;
 	}
 

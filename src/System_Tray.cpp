@@ -2,25 +2,22 @@
 #include "Global_Variables.h"
 #include "BalloonTip.h"
 #include "resource.h"
-#include "Network_Functionality.h"
-#include "Load_Externals.h"
+#include "network_handler.h"
+#include "settings_handler.h"
 #include "device_IO.h"
 #include "crash_logger.h"
-
 #include <Dbt.h>
 
 initialize_device System_Tray::io_init;
-Network_Functionality *System_Tray::nf = nullptr;
 device_IO *System_Tray::io = nullptr;
-Load_Externals *System_Tray::load = nullptr;
-Settings_GUI *System_Tray::gui = nullptr;
-Settings_OGUI *System_Tray::new_gui = nullptr;
+update_handler* System_Tray::_update;
+settings_handler *System_Tray::load = nullptr;
+Settings_WPF* System_Tray::wpf = nullptr;
 NOTIFYICONDATA System_Tray::notify;
 bool System_Tray::new_g = false;
 
 LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, LPARAM lParam) {
 	INT wmid, wmEvent;
-
 	switch (message) {
 	case WM_DEVICECHANGE:
 		io->check_for_disconnection();
@@ -52,7 +49,7 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 		break;
 		case NIN_BALLOONUSERCLICK:
 			if (BalloonTip::_Get_Identifier() == 1) {
-				nf->Download_Updates();
+				_update->install_updates();
 				BalloonTip::_Set_Identifier(0);
 			}
 			break;
@@ -65,8 +62,6 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 		// Button events for when you click the system tray icon
 		switch (wmid) {
 		case AM_EXIT:
-			if(new_gui->get_Open())
-				new_gui->terminate_thread();
 			PostQuitMessage(0);
 			Shell_NotifyIcon(NIM_DELETE, &notify);
 			io->Dehook_from_mixer();
@@ -81,18 +76,15 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 			break;
 
 		case AM_UPDATES:
-			if (nf->Check_For_Updates(false))
+			if (_update->check_for_updates(false))
 				load->Update_Save_File();
 			break;
 
 		case AM_WAITING:
-			nf->Download_Updates();
+			_update->install_updates();
 			break;
 		case AM_SETTINGS:
-			if(!new_g)
-				gui->Launch_GUI();
-			else 
-				new_gui->Launch_GUI();
+			wpf->launch();
 			break;
 
 		}
@@ -103,8 +95,6 @@ LRESULT CALLBACK System_Tray::OnEvent(HWND Handle, UINT message, WPARAM wParam, 
 }
 
 void System_Tray::exit_sequence() {
-	if (new_gui->get_Open())
-		new_gui->terminate_thread();
 	PostQuitMessage(0);
 	Shell_NotifyIcon(NIM_DELETE, &notify);
 	io->Dehook_from_mixer();
@@ -131,19 +121,12 @@ void System_Tray::ShowContextWindow(HWND hwnd) {
 	}
 }
 
-System_Tray::System_Tray(/* std::unique_ptr<Settings_GUI> *g*/ Settings_GUI *g) {
-	nf = new Network_Functionality();
+System_Tray::System_Tray(/* std::unique_ptr<Settings_GUI> *g*/ Settings_WPF* g) {
+	_update = new update_handler();
 	io = new device_IO();
-	load = new Load_Externals();
-	gui = g;
-}
-
-System_Tray::System_Tray(/* std::unique_ptr<Settings_GUI> *g*/ Settings_OGUI *g) {
-	new_g = true;
-	nf = new Network_Functionality();
-	io = new device_IO();
-	load = new Load_Externals();
-	new_gui = g;
+	load = new settings_handler();
+	wpf = g;
+	tip = "ARDUINO MIXER PROTOTYPE v." + global::_version;
 }
 
 System_Tray::~System_Tray(){
@@ -194,7 +177,7 @@ void System_Tray::Register_System_Tray_Icon(HWND hwnd) {
 		printf("Could not add...\n");
 
 		crash_logger ci;
-		ci.log_message_with_last_error(__FUNCTION__);
+		ci.log_message_with_last_error("Could not add notify icon, in the bottom right of the desktop", __FUNCTION__);
 		exit(0);
 	}
 }

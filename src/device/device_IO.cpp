@@ -1,6 +1,7 @@
 #include "Global_Variables.h"
 #include "device_IO.h"
 #include "crash_logger.h"
+#include "format_sessions.h"
 #include <myio.h>
 
 device_IO::device_IO() {
@@ -20,9 +21,9 @@ std::string device_IO::Parse_Display_Text() {
 	const std::string space_temp = "     ";  // Default spacing between the audio names
 	std::string volume_buffer;
 	Audio_Controller control;
-	for (int a = 4 * (global::page_Number - 1); a < 4 + (4 * (global::page_Number - 1)); a++) {
-		buffer += global::programs[a];
-		int ivol = static_cast<int>(control.get_last_value_of_sliders(a) * 100);
+	for (int a = 0; a < 4; a++) {
+		buffer += format_sessions::get().get_active_page().s[a].name;
+		int ivol = static_cast<int>(format_sessions::get().get_initial_volume(a) * 100);
 
 		clamp_to_nearest(ivol, 5);
 		volume_buffer += std::to_string(ivol) + ";";
@@ -38,10 +39,10 @@ std::string device_IO::Parse_Display_Text() {
 	which means you can set the starting volume to anything you want!
 	with v.3 and down, potentiometers were used.
 	*/
-	if (global::version >= 4)
+	if (info_packet.i_hardware_version >= 4)
 		buffer += ";" + volume_buffer;
 
-	//printf("%s\n", buffer.c_str());
+	printf("%s\n", buffer.c_str());
 
 	return buffer;
 }
@@ -68,12 +69,10 @@ void device_IO::Get_Mixer_Version() {
 	int t = arduino.recieveFrom(buffer, 256);
 	std::string temp = buffer;
 	temp.erase(0, 1);
-	printf("%s\n", temp.c_str());
 	info_packet.hardware_version = temp[0];
-	printf("%s\n", info_packet.hardware_version.c_str()); 
 	info_packet.i_hardware_version = temp[0] - 48;
-	info_packet.software_version = temp[2];
-	info_packet.creator = temp.substr(temp.find(";") + 1, temp.find("}")-6);
+	info_packet.software_version = temp[2] + (temp[3] != ';' ? temp[3] : 0);
+	info_packet.creator = temp.substr(temp.find(";") + 1, temp.find("}")-4);  // -6? WHY?
 	printf("%s, %s, %s\n", info_packet.hardware_version.c_str(), info_packet.software_version.c_str(), info_packet.creator.c_str());
 }
 
@@ -128,15 +127,11 @@ bool device_IO::Is_Open() {
 
 //Time based disconnect checking, if bytes recieved is 0
 //for 1 second the mixer has been disconnected
-/*Quite obsolete at this time...*/
-bool device_IO::Recieved_NULL_for_a_Time(int t) {
-	if (t == 0) {
-		if (std::chrono::duration_cast<std::chrono::seconds>(tend - tstart).count() >= 5) {
-			return true;
-		}
-	}
-	else {
+bool device_IO::Recieved_NULL_for_a_Time() {
+	if (std::chrono::duration_cast<std::chrono::seconds>(tend - tstart).count() >= 25) {
 		tstart = std::chrono::high_resolution_clock::now();
+		check_for_disconnection();
+		return true;
 	}
 	tend = std::chrono::high_resolution_clock::now();
 	return false;
@@ -146,9 +141,20 @@ void device_IO::check_for_disconnection() {
 	std::string temp = CALL_CHECK_COMMAND;
 	if (is_Connected) {
 		if (!arduino.writeTo(temp.c_str(), temp.size())) {
-			printf("disconnected!\n");
 			is_Connected = false;
 			Try_to_Connect();
+			arduino.disconnect();
+		}
+		else {
+			char buffer[256] = "";
+			int t = arduino.recieveFrom(buffer, 256);
+			std::string buff = buffer;
+			if (t == 0 || buff.find("OK") == std::string::npos) {
+				is_Connected = false;
+				printf("Disconnected!\n");
+				arduino.disconnect();
+				Try_to_Connect();
+			}
 		}
 	}
 	else
@@ -158,6 +164,7 @@ void device_IO::check_for_disconnection() {
 void device_IO::Read_Arduino_Input() {
 	if (!is_Connected)
 		return;
+	//Recieved_NULL_for_a_Time();
 	int t = arduino.recieveFrom(s2, buffersize);
 	if (t < 2) {
 		for (int a = 0; a < 4; a++) {
@@ -211,6 +218,7 @@ void device_IO::Read_Arduino_Input() {
 	if (audio[0].value == -1.f || audio[1].value == -1.f || audio[2].value == -1.f || audio[3].value == -1.f) {
 		if (global::page_Number > 1 /*&& !recent_Change*/) {
 			global::page_Number--;
+			format_sessions::get().minus_active_page_session();
 			Update_LCD_Screen();
 			printf("(--)v1: %.2f, v2: %.2f, v3: %.2f, v4: %.2f, t: %i\n", audio[0].value, audio[1].value, audio[2].value, audio[3].value, t);
 			//recent_Change = true;
@@ -222,6 +230,7 @@ void device_IO::Read_Arduino_Input() {
 	else if (audio[0].value == -1.2f || audio[1].value == -1.2f || audio[2].value == -1.2f || audio[3].value == -1.2f) {
 		if (global::page_Number < MAX_PAGE_NUMBER /*&& !recent_Change*/) {
 			global::page_Number++;
+			format_sessions::get().plus_active_page_session();
 			Update_LCD_Screen();
 			printf("(++)v1: %.2f, v2: %.2f, v3: %.2f, v4: %.2f, t: %i\n", audio[0].value, audio[1].value, audio[2].value, audio[3].value, t);
 			recent_Change = true;
@@ -255,7 +264,7 @@ void device_IO::Read_Arduino_Input() {
 	}
 	else {
 		if(audio[0].has_changed)
-		printf("(  )v1: %.2f, v2: %.2f, v3: %.2f, v4: %.2f, t: %i\n", audio[0].value, audio[1].value, audio[2].value, audio[3].value, t);
+		//printf("(  )v1: %.2f, v2: %.2f, v3: %.2f, v4: %.2f, t: %i\n", audio[0].value, audio[1].value, audio[2].value, audio[3].value, t);
 		recent_Change = false;
 		//Sleep(10);
 		return;

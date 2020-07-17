@@ -1,6 +1,6 @@
 #include "Chrome_Integration.h"
 #include "BalloonTip.h"
-#include "Network_Functionality.h"
+#include "network_handler.h"
 #include "Global_Variables.h"
 #include "Zip_File_Handler.h"
 #include "System_Tray.h"
@@ -88,7 +88,7 @@ void Chrome_Integration::Initialize_Extension_after_Install() {
 
 	if (AllocConsole() == 0) {
 		crash_logger cl;
-		cl.log_message_with_last_error(__FUNCTION__);
+		cl.log_message_with_last_error("Could not allocate console", __FUNCTION__);
 		exit(0);
 	}
 	errno_t err;
@@ -109,7 +109,7 @@ void Chrome_Integration::Initialize_Extension_after_Install() {
 
 	if (AttachConsole(GetProcessId(GetStdHandle(-10))) == 0) {
 		crash_logger cl;
-		cl.log_message_with_last_error(__FUNCTION__);
+		cl.log_message_with_last_error("Could not attach console", __FUNCTION__);
 		exit(0);
 	}
 
@@ -228,7 +228,7 @@ void Chrome_Integration::Manifest_Creation() {
 	file << extension_js_playback;
 	file.close();
 
-	Network_Functionality nf;
+	network_handler nf;
 	Zip_File_Handler zip;
 	std::string out = std::filesystem::current_path().string() + "\\am_c_integration\\";
 	std::string out_zip = out + "am_c_integration.zip";

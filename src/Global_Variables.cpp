@@ -1,9 +1,6 @@
 #include "Global_Variables.h"
 
 namespace global {
-	sf::Font font;
-	//std::string com_Port = "COM-1";  //BASE COM VALUE...
-	//std::string update_Time = "1997-10-11T19:57:47";
 	std::string documents_Settings_Path = "";
 	std::string ci_key;
 	std::string container_id = "{}";
@@ -18,6 +15,7 @@ namespace global {
 	bool auto_update = true;
 	bool prog_ending = false;
 	bool experimental = false;
+	const std::string _version = "2.5.0";
 	std::vector<std::string> to_Exclude;
 	std::vector<reserved> reserved_List;
 	std::vector<std::string> rename_list;

@@ -59,6 +59,7 @@ namespace global {
 	extern bool auto_update;
 	extern bool prog_ending; // when the program is prepering for closing.
 	extern bool experimental;
+	extern const std::string _version;
 	extern std::vector<std::string> to_Exclude;
 	extern std::vector<reserved> reserved_List;
 	extern std::vector<std::string> rename_list;

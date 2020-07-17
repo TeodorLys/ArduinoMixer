@@ -2,7 +2,7 @@
 #include "enumerate_sessions.h"
 #include <mmdeviceapi.h>
 
-session* enumerate_sessions::Enumarate_Audio_Session(int index) {
+session enumerate_sessions::Enumarate_Audio_Session(int index) {
 	session buff;
 	HRESULT hr = 0;
 	if (pSessionEnum == nullptr)
@@ -13,8 +13,8 @@ session* enumerate_sessions::Enumarate_Audio_Session(int index) {
 		printf("Was unable to aquire simpleaudiovolume controller!\n");
 	}
 	buff.name = Get_Session_Display_Name(&pSessionControl);
-	buff.control->GetMasterVolume(&buff.initial_volume);
-	//buff.control->GetMute((BOOL*)&buff.mute);
+	buff.control->GetMasterVolume(&buff.initial_volume);   // TODO Check if this actually returns the valid value.
+	//buff.control->GetMute((BOOL*)&buff.mute);  // ERROR: This gives a access violation error...
 	if (buff.name == "NULL") {
 		buff.name = Get_Session_Display_Name(&pSessionControl);
 		if (buff.name == "NULL") {
@@ -24,13 +24,23 @@ session* enumerate_sessions::Enumarate_Audio_Session(int index) {
 			buff.name = "UNKNOWN";
 		}
 	}
-	return &buff;
+	return buff;
 }
 
 std::string enumerate_sessions::Get_Session_Display_Name(IAudioSessionControl** pSessionControl) {
 	HRESULT hr = S_OK;
 	LPWSTR try_Str = 0;
 	std::string display;  //What to display.
+	if ((*pSessionControl) == NULL) {
+		crash_logger cl;
+		cl.log_message_with_last_error("Somehow the session controller was null...", __FUNCTION__);
+		return "NULL";
+	}
+	/*
+	Tries to retrieve the display name from the actual controller object, this usually returns NULL
+	but there is one particular session that windows does not use(atleast for app volumes), 
+	"AudioSrv". The only way to find it was to get the display name. hence the find and exclude, directly.
+	*/
 	(*pSessionControl)->GetDisplayName(&try_Str);
 	std::wstring temp = try_Str;
 	if (temp.find(L"AudioSrv") == std::wstring::npos) {
@@ -55,10 +65,14 @@ std::string enumerate_sessions::Get_Session_Display_Name(IAudioSessionControl** 
 				display.erase(0, display.find_last_of("\\") + 1);  //Removes the path, excluding the progam name.
 				display.erase(display.size() - 4, display.size());  // --||--
 			}
+			/*
+			If the string erase failed, dont exit or throw a error, 
+			just log the problem, and return "UNPARSE" as the display name...
+			*/
 			catch (std::exception e) {
 				printf("%s\n", e.what());
 				crash_logger ci;
-				ci.log_message(e.what(), __FUNCTION__);
+				ci.log_message(e.what() + std::string("Could not parse the audio session name"), __FUNCTION__);
 				display = "UNPARSE";
 			}
 		}
@@ -68,6 +82,9 @@ std::string enumerate_sessions::Get_Session_Display_Name(IAudioSessionControl** 
 
 		std::transform(display.begin(), display.end(), display.begin(), ::toupper);
 		std::string buff = "";
+		/*
+		Old way of removing a space from a string... fun, hip, cool
+		*/
 		for (char c : display) {
 			if (c != (char)32)
 				buff += c;
@@ -75,6 +92,10 @@ std::string enumerate_sessions::Get_Session_Display_Name(IAudioSessionControl** 
 
 		display = buff;
 
+		/*
+		The maximum size of a string is 7 characters, 
+		because of the limited size of the LCD screen
+		*/
 		if (display.size() > 6)
 			display.erase(6, display.size());
 		else if (display.size() < 6) {
@@ -110,15 +131,20 @@ HRESULT enumerate_sessions::CreateSessionManager(IAudioSessionManager2** ppSessi
 
 	if (hr != S_OK) {
 		printf("Could not CoCreateInstance\n");
+		crash_logger cl;
+		cl.log_message_with_last_error("Could not CoCraeteInstance", __FUNCTION__);
 		SAFE_RELEASE(pDevice);
 		SAFE_RELEASE(pEnumerator);
 		SAFE_RELEASE(pSessionManager);
-		return 1;
+		return hr;
 	}
 
 	hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-
+	if (hr != S_OK)
+		return hr;
 	hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, NULL, (void**)&pSessionManager);
+	if (hr != S_OK)
+		return hr;
 
 	*(ppSessionManager) = pSessionManager;
 	(*ppSessionManager)->AddRef();
