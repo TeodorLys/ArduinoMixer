@@ -82,7 +82,8 @@ bool network_handler::Download_single_file(std::string _filename, std::string _o
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
 		//yes i know... should really not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		std::string bearer = "Authorization: Bearer " + global::token;
+		list = curl_slist_append(list, bearer.c_str());
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
 
@@ -138,7 +139,8 @@ std::string network_handler::download_single_stream(std::string _filename) {
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
 		//yes i know... should really not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		std::string bearer = "Authorization: Bearer " + global::token;
+		list = curl_slist_append(list, bearer.c_str());
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
 
@@ -178,7 +180,8 @@ std::string network_handler::find_file_in_dropbox(std::string query, bool case_s
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://api.dropboxapi.com/2/files/search_v2");
 		//yes i know... should really not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		std::string bearer = "Authorization: Bearer " + global::token;
+		list = curl_slist_append(list, bearer.c_str());
 		list = curl_slist_append(list, "Content-Type: application/json");
 		//list = curl_slist_append(list, "{\"query\": \"Arduino\",\"include_highlights\": false}");
 
@@ -249,7 +252,8 @@ std::vector<std::string> network_handler::list_files_in_dropbox(std::string quer
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://api.dropboxapi.com/2/files/search_v2");
 		//yes i know... should really not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		std::string bearer = "Authorization: Bearer " + global::token;
+		list = curl_slist_append(list, bearer.c_str());
 		list = curl_slist_append(list, "Content-Type: application/json");
 		//list = curl_slist_append(list, "{\"query\": \"Arduino\",\"include_highlights\": false}");
 
@@ -326,7 +330,8 @@ bool network_handler::Download_Updates() {
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
 		//yes i know... really shouldnt not use a "static" access token, but github was not very reliable...
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		std::string bearer = "Authorization: Bearer " + global::token;
+		list = curl_slist_append(list, bearer.c_str());
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, args.c_str());
 
@@ -398,7 +403,8 @@ bool network_handler::Check_For_Updates(bool quiet_Mode) {
 	std::string out;
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, "https://content.dropboxapi.com/2/files/download");
-		list = curl_slist_append(list, "Authorization: Bearer <ACCESS TOKEN>");
+		std::string bearer = "Authorization: Bearer " + global::token;
+		list = curl_slist_append(list, bearer.c_str());
 		list = curl_slist_append(list, "Content-Type:");
 		list = curl_slist_append(list, "Dropbox-API-Arg: {\"path\":\"/VERSION.txt\"}");
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);

@@ -4,6 +4,7 @@ namespace global {
 	std::string documents_Settings_Path = "";
 	std::string ci_key;
 	std::string container_id = "{}";
+	std::string token = "NILL";  // Dropbox access token
 	int version;
 	int ci_key_hex;
 	int ci_add_hex = 0;

@@ -19,10 +19,17 @@
 
 #pragma comment(linker, "/SUBSYSTEM:console /ENTRY:mainCRTStartup")
 
+/*
+
+TODO: Restructure format_session! See Audio_Controller class!
+ * FIRST! Better regular_sessions handling in format_session
+ * Make helper classes(PLURAL!) for format_session, its too big
+ * Specifically check the rerender function!
+*/
+
 bool auto_open_settings = false;
-
+const int time_update = 1800;
 int main(int argc, char** argv) {
-
 	device_IO io;
 	network_handler nf;
 	update_handler _update;
@@ -30,9 +37,8 @@ int main(int argc, char** argv) {
 	Chrome_Integration ci;
 	initialize_device io_init;
 	console _console;
-	FILE* new_stdout;
 
-	Set_Log_Print_Level(0);
+	Set_Log_Print_Level(LOG_LEVEL_INFO);
 	/*
 	A safety feature, so you cant have two instances of the mixer...
 	*/
@@ -42,9 +48,15 @@ int main(int argc, char** argv) {
 
 	sf::Clock clock;
 	sf::Clock update_clock;
+	/*
+	Why WPF? because it was made with WPF in C# :)
+	*/
 	Settings_WPF wpf;
 	load.Try_settings_handler(false); // Loading settings file and such
-
+	
+	/*
+	@DEPRECATED!
+	*/
 	if (argc > 1) {
 		std::string arg = argv[1];
 		if (arg == "-c_connect") {
@@ -61,6 +73,7 @@ int main(int argc, char** argv) {
 			_update.finish_and_clean_install();
 		}
 	}
+	/**/
 
 	System_Tray tray(&wpf);
 	tray.Start();
@@ -73,7 +86,7 @@ int main(int argc, char** argv) {
 	If the end user has multiple Teensy chips connected, this makes sure that we connect to the correct device.
 	*/
 	if (global::container_id == "{}") {
-		io_init.retry_devices();  // Connects to all found devices and does a retrieve device info call.
+		io_init.retry_devices();  // Connects to all found devices and does a request device-info call.
 	}
 	else {
 		io_init.find_device_by_container_id();
@@ -94,8 +107,6 @@ int main(int argc, char** argv) {
 
 	MSG msg;
 	msg.message = ~WM_QUIT;
-	int frame = 0;
-	sf::Clock c;
 
 	io.Parse_Display_Text();  // The initial communication with the mixer
 
@@ -107,16 +118,19 @@ int main(int argc, char** argv) {
 		/*
 		TODO: MAYBE @DEPRECATED!
 		The current version of chrome has a built in play/pause function, 
-		it uses the media play pause button, maybe remove the extension creator class
-		and just modify the check for keypress functionm?
+		it uses the media play pause key, maybe remove the extension creator class
+		and just modify the check for keypress function?
 		*/
 		ci.check_for_keypress();
+		/*
+		If a device is NOT connected, we check for devices every 500ms
+		*/
 		if (!io._Is_Connected() && clock.getElapsedTime().asMilliseconds() >= 500) {
 			io.Try_to_Connect();
 			clock.restart();
 		}
 
-		if (global::auto_update && update_clock.getElapsedTime().asSeconds() >= 1800) {
+		if (global::auto_update && update_clock.getElapsedTime().asSeconds() >= time_update) {
 			_update.check_for_updates(true);
 			update_clock.restart();
 		}
@@ -129,7 +143,7 @@ int main(int argc, char** argv) {
 			if (io._Is_Connected()) {
 				io.Read_Arduino_Input();
 				/*
-				this function(below) both acts as a set volume function,
+				this function(below) both acts as a set volume function
 				and as a check for new programs function, also if a
 				program was opened or closed.
 				TODO: Two separate functions maybe.

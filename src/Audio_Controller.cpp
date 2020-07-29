@@ -80,6 +80,7 @@ void Audio_Controller::Rerender_Audio_Displays() {
 		if (!Check_for_Restrictions(format_sessions::get().get(a).name) && format_sessions::get().get(a).name != "UNUSED" && format_sessions::get().get(a).name != "RESERV") {
 			format_sessions::get().free_reserv_spot(a);
 			format_sessions::get().deallocate_session(a);
+			format_sessions::get().regular_entity(format_sessions::get().get(a).name, false, true);
 		}
 		if(is_renamed(format_sessions::get().get(a).name))
 			format_sessions::get().get(a).name = Check_For_New_Name(format_sessions::get().get(a).name);
@@ -100,13 +101,11 @@ void Audio_Controller::Rerender_Audio_Displays() {
 					format_sessions::get().assign_session_spot(reservation.index, reservation.name);
 				else 
 					format_sessions::get().assign_session_spot(reservation.index, "RESERV");
-
+				format_sessions::get().regular_entity(reservation.name, true, false, true);
 				printf("%s\n", format_sessions::get().get(reservation.index).name.c_str());
-
 			}
 		}
 	}
-
 	format_sessions::get().reenumerate_sessions();
 	Push_Back_Audio_Controller();
 }/*---</Rerender_Audio_Displays>---*/
@@ -124,6 +123,7 @@ void Audio_Controller::Pop_Back_Audio_Controller() {
 
 	for (int a = 0; a < 36; a++) {
 		if (format_sessions::get().compare_session(_removed.name, a)) {
+			format_sessions::get().regular_entity(_removed.name, false, true);
 			format_sessions::get().deallocate_session(a);
 			break;
 		}
@@ -145,12 +145,15 @@ void Audio_Controller::Push_Back_Audio_Controller() {
 		for (int a = 0; a < format_sessions::get().get_reserv_size(); a++) {
 			if (format_sessions::get().get_reserv_session(a).name == _added.name) {
 				format_sessions::get().get(format_sessions::get().get_reserv_session(a).index).name = format_sessions::get().get_reserv_session(a).name;
+				format_sessions::get().regular_entity(_added.name, true, false);
 			}
 		}
 	}
 	else {
-		if (Check_for_Restrictions(_added.name))
+		if (Check_for_Restrictions(_added.name)) {
 			format_sessions::get().assign_next_unused_spot(_added.name);
+			format_sessions::get().regular_entity(_added.name, false, false);
+		}
 	}
 
 	format_sessions::get().reenumerate_sessions();

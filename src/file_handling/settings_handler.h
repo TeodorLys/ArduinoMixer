@@ -3,16 +3,19 @@
 #include <SaveAble.h>
 #include <libconfig.h++>
 #include <iostream>
+#include <ShlObj_core.h>
 #include "crash_logger.h"
 
 class settings_handler {
 private:
 	static libconfig::Config cfg;
-	static std::string documents_Path;   //Path to the current user documents folder
 	static std::string settings_Path; 
 	static bool is_Logging;  // Default file values...
 	static bool system_Control;   // --||--
 	const int file_Entrys = 5; // If this does not match the number of settings in the file it will recreate it...
+
+public:
+	static std::string documents_Path;   //Path to the current user documents folder
 private:
 	void Load_File();
 	void Create_File();
@@ -54,10 +57,16 @@ public:
 	*/
 	void reread_all_data();
 	void write_system_data();
+	void read_token_from_file();
 public:
 	bool get_Logging() const { return is_Logging; }
 	bool get_Exclude_System() const { return system_Control; } //@Deprecated
+	static std::string get_documents_path() {
+		TCHAR path[MAX_PATH];
 
+		SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, 0, path);
+		return std::string(path);
+	}
 private:
 	void write_to_file() {
 		try {

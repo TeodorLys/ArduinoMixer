@@ -71,6 +71,11 @@ bool update_handler::install_updates() {
 	
 	zip.Open_Zip(update_path.c_str());
 	zip.Unzip(temp_dir.c_str());  // Unpacks the files into the temp folder in appdata
+	/*
+	TODO: Do this in the check for updates!
+	and maybe extend the check timer.
+	TODO: Move this to a seperate function!
+	*/
 	if (std::filesystem::exists(temp_dir + "\\UPDATE_DEVICE")) {
 		device_IO dio;
 		/*
@@ -185,7 +190,7 @@ bool update_handler::install_device_firmware(std::string firmware) {
 	std::string command = "tycmd upload --board @" + device_IO::com_port() + " " + firmware;
 
 	/*
-	TODO: use something different to "system".
+	TODO: use something different than "system".
 	NOT GOOD!!!
 	*/
 	system(command.c_str());

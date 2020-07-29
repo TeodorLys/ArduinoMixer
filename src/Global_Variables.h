@@ -48,6 +48,7 @@ namespace global {
 	extern std::string documents_Settings_Path;
 	extern std::string ci_key; // Chrome integration hotkey
 	extern std::string container_id; // Teensy chip container id, got from within the regkey.
+	extern std::string token;
 	extern int version; 
 	extern int ci_key_hex;
 	extern int ci_add_hex;
@@ -66,5 +67,5 @@ namespace global {
 	extern std::vector<rename_session> renamed;
 	extern std::vector<page_spec> _page_options;
 	extern std::vector<std::string> page_options;
-	extern sf::Font font;  // @Deprecated Should probably remove this...
+	extern sf::Font font;  // @Deprecated Should probably remove this...	
 }

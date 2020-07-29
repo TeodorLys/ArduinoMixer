@@ -53,12 +53,16 @@ void initialize_device::retry_devices() {
 				else {
 					std::string buffer = read_buffer;
 					printf("%s\n", buffer.c_str());
+					/*
+					What the mixer returns when we request a firmware version, it includes the writer of the code i.e. me Teodor :)
+					So we just check for that, pretty easy and not very common.
+					*/
 					if (buffer.find("Teodor") != std::string::npos) {
 						found_port = _e_device.get_container_port(a);
 						device_IO::com_port() = found_port;
 						global::container_id = _e_device.get_container_id(a);
-						settings_handler load;
-						load.write_system_data();
+						settings_handler write;
+						write.write_system_data();
 					}
 				}
 			}

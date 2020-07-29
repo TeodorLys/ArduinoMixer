@@ -20,20 +20,38 @@ std::string device_IO::Parse_Display_Text() {
 	std::string buffer = "";
 	const std::string space_temp = "     ";  // Default spacing between the audio names
 	std::string volume_buffer;
-	Audio_Controller control;
+
+	std::string _sessions[4];
+	for (int _s = 0; _s < 4; _s++) {
+		_sessions[_s] = format_sessions::get().get_active_page().s[_s].name;
+
+		if (_sessions[_s].size() < 7) {
+			int __left = (7 - _sessions[_s].size()) / 2;
+			int right = (7 - _sessions[_s].size()) / 2;
+			int left = ((((float)(7 - _sessions[_s].size()) / 2) - __left) * 2) + __left;
+			_sessions[_s].insert(_sessions[_s].begin(), left, ' ');
+			_sessions[_s].insert(_sessions[_s].end(), right, ' ');
+			std::fill(_sessions[_s].end() - right, _sessions[_s].end(), ' ');
+			printf("%.2f, %i, size: %i, %s\n", ((float)(7 - _sessions[_s].size()) / 2), left, _sessions[_s].size(), _sessions[_s].c_str());
+		}
+
+	}
+
 	for (int a = 0; a < 4; a++) {
-		buffer += format_sessions::get().get_active_page().s[a].name;
+		if (a > 0)
+			buffer += "    ";
+		buffer += _sessions[a];
 		int ivol = static_cast<int>(format_sessions::get().get_initial_volume(a) * 100);
 
 		clamp_to_nearest(ivol, 5);
 		volume_buffer += std::to_string(ivol) + ";";
-		if (a != 3)
-			buffer += space_temp;
+		//if (a != 3)
+		//	buffer += space_temp;
 	}
 
-	if (buffer.size() != 40)
-		buffer.resize(40, (char)32);
-	
+	//if (buffer.size() != 40)
+	//	buffer.resize(40, (char)32);
+	//
 	/*
 	Versions 4 and up uses encoders for the volume controller,
 	which means you can set the starting volume to anything you want!
@@ -72,7 +90,7 @@ void device_IO::Get_Mixer_Version() {
 	info_packet.hardware_version = temp[0];
 	info_packet.i_hardware_version = temp[0] - 48;
 	info_packet.software_version = temp[2] + (temp[3] != ';' ? temp[3] : 0);
-	info_packet.creator = temp.substr(temp.find(";") + 1, temp.find("}")-4);  // -6? WHY?
+	info_packet.creator = temp.substr(temp.find(";") + 1, temp.find("}")-4);  // -4? WHY?
 	printf("%s, %s, %s\n", info_packet.hardware_version.c_str(), info_packet.software_version.c_str(), info_packet.creator.c_str());
 }
 

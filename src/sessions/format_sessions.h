@@ -5,6 +5,7 @@
 #include <audiopolicy.h>
 #include "enumerate_sessions.h"
 #include "crash_logger.h"
+#include "regular_sessions.h"
 
 /*
 This class uses a string buffer, and that is what all the "outside" functions
@@ -14,7 +15,7 @@ and at the end of each string (re)structure, you just call reenumerate_sessions
 and it will push each program into a buffer and assign it to the right
 spot by NAME.
 
-TODO: Make it smaller, make each function have more functionallity.
+TODO: Make it smaller(less functions), make each function have more functionallity.
 this is a big mess now...
 */
 struct session_reservation {
@@ -35,6 +36,7 @@ private:
 	page_sessions *active;
 	enumerate_sessions enum_sessions;
 	std::vector<session> buffer;
+	regular_sessions reg;
 public:
 	/*
 	Easy fix to avoidning a "Global variable". this is a global variable but not all in the same file atleast...
@@ -301,6 +303,13 @@ public:
 
 	int recent_buffer_size() {
 		return buffer.size();
+	}
+
+	void regular_entity(std::string name, bool reserv, bool remove = false, bool only_update = false) {
+		if (reg.exists(name) || only_update)
+			reg.update_entity(name, reserv, remove);
+		else
+			reg.add_entity(name, reserv);
 	}
 
 };

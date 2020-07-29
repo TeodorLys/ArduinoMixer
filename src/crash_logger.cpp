@@ -12,8 +12,9 @@ void crash_logger::log_message_with_last_error(std::string extra, const char* fu
 	LPSTR messageBuffer = nullptr;
 	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
-
-	log_message(messageBuffer + extra, func);
+	std::string _s_buffer = messageBuffer;
+	_s_buffer.pop_back();
+	log_message(_s_buffer + extra, func);
 }
 
 void crash_logger::log_message(std::string s, const char* func) {

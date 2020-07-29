@@ -24,6 +24,10 @@ void format_sessions::construct_sessions() {
 				if (compare_reserved_session(buffer[b].name, a)) {
 					printf("Reserved: %s\n", buffer[b].name.c_str());
 					assign_session_spot(a, check_For_New_Name(buffer[b].name));
+					if (reg.exists(buffer[b].name))
+						reg.update_entity(buffer[b].name, true);
+					else 
+						reg.add_entity(buffer[b].name, true);
 					buffer.erase(buffer.begin() + b);
 				}
 			}
@@ -31,11 +35,15 @@ void format_sessions::construct_sessions() {
 	}
 
 	for (int a = 0; a < (int)buffer.size(); a++) {
-		printf("%s\n", buffer[a].name.c_str());
-		if(Check_for_Restrictions(buffer[a].name.c_str()))
+		printf("Session_buffer: %s, %i\n", buffer[a].name.c_str(), a);
+		if (Check_for_Restrictions(buffer[a].name.c_str())) {
+			if (reg.exists(buffer[a].name))
+				reg.update_entity(buffer[a].name);
+			else
+				reg.add_entity(buffer[a].name);
 			assign_next_unused_spot(check_For_New_Name(buffer[a].name));
+		}
 	}
-
 	reenumerate_sessions();
 }
 
@@ -44,7 +52,7 @@ session format_sessions::get_recently_closed_program() {
 	int count = enum_sessions.Get_Count();
 
 	/*
-	I Add all the sessions into a single string, which I can
+	I add all the sessions into a single string, which I can
 	then can compare against by checking if the OLD session buffer contains
 	a name -- if it doesnt return it.
 	*/
@@ -69,7 +77,7 @@ session format_sessions::get_recently_opened_program() {
 	push_sessions_to_buffer();
 
 	/*
-	I Add all the sessions into a single string, which I can
+	I add all the sessions into a single string, which I can
 	then can compare against by checking if the NEW enumeration buffer contains
 	a name -- if it DOESNT return it.
 	*/

@@ -423,6 +423,13 @@ void settings_handler::Update_Save_File() {
 	write_basic_data();
 }
 
+void settings_handler::read_token_from_file() {
+	std::fstream file(global::documents_Settings_Path + "\\token", std::fstream::in);
+	file >> global::token;
+	if (global::token == "")
+		global::token = "NILL";
+}
+
 void settings_handler::_Get_COM_From_Reg() {
 	self::Arduino_API api;
 	printf("checking_coms...");
